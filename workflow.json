@@ -1,0 +1,190 @@
+{
+  "name": "Tutoring Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lesson",
+        "options": {
+          "rawBody": true,
+          "responseMode": "json",
+          "responseFormat": "json"
+        }
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "b895950c-3939-486e-a469-f1f35719722f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{({ model: 'Qwen2.5:7B', prompt: `Evaluate the following student's answer: '${$items(\"Webhook\")[0].json.body.answer}' to the question '${$items(\"Webhook\")[0].json.body.question}' on the topic '${$items(\"Webhook\")[0].json.body.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`, stream: false })}}",
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "fullResponse": false
+          }
+        }
+      },
+      "name": "Evaluate Answer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "{{$json.json.retention}}",
+              "operation": "largerEqual",
+              "value2": "0.7"
+            }
+          ]
+        }
+      },
+      "name": "Check Retention",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{({ model: 'deepseek-r1:14b', prompt: `The student is doing well on the topic '${$items(\"Webhook\")[0].json.body.topic}'. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.`, stream: false })}}",
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "fullResponse": false
+          }
+        }
+      },
+      "name": "Generate Advanced Lesson",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{({ model: 'deepseek-r1:14b', prompt: `The student is struggling with the topic '${$items(\"Webhook\")[0].json.body.topic}'. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.`, stream: false })}}",
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "fullResponse": false
+          }
+        }
+      },
+      "name": "Generate Review Lesson",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "body": "={{$json}}",
+        "options": {}
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Answer": {
+      "main": [
+        [
+          {
+            "node": "Check Retention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Retention": {
+      "main": [
+        [
+          {
+            "node": "Generate Advanced Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Review Lesson",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Advanced Lesson": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Review Lesson": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "3"
+}

@@ -1,0 +1,17 @@
+<div class="chat-container">
+  <div class="chat-history">
+    <div *ngFor="let msg of messages" class="message" [ngClass]="{
+      'user-message': msg.sender === 'user', 
+      'tutor-message': msg.sender === 'tutor',
+      'lesson-message': msg.type === 'lesson',
+      'question-message': msg.type === 'question',
+      'loading-message': msg.type === 'loading'
+    }">
+      <div [innerHTML]="formatMessage(msg.text)"></div>
+    </div>
+  </div>
+  <div class="chat-input">
+    <input type="text" [(ngModel)]="message" placeholder="Type your answer..." (keyup.enter)="sendChatMessage()">
+    <button (click)="sendChatMessage()" [disabled]="isLoading">{{ isLoading ? 'Evaluating...' : 'Send' }}</button>
+  </div>
+</div>
