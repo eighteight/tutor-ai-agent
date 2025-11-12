@@ -83,28 +83,26 @@
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combinationMode": "mergeByPosition",
-        "options": {}
+        "jsCode": "// Get evaluation data from previous node\nconst evaluationResponse = $json.response;\n\n// Parse evaluation JSON\nlet evaluationData = {};\ntry {\n  const jsonMatch = evaluationResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    evaluationData = JSON.parse(jsonMatch[1]);\n  }\n} catch (e) {\n  console.log('Error parsing evaluation:', e);\n}\n\n// Store evaluation data for later use\nreturn {\n  json: {\n    ...evaluationData,\n    originalResponse: evaluationResponse\n  }\n};"
       },
-      "name": "Merge with Retention",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 2.1,
+      "name": "Parse Evaluation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        160,
+        -300,
         112
       ],
-      "id": "merge-retention-node"
+      "id": "parse-evaluation-node"
     },
     {
       "parameters": {
-        "jsCode": "const lessonData = $input.first().json;\nconst evaluationData = $input.last().json;\n\n// Parse lesson content\nlet parsedLesson;\ntry {\n  const jsonMatch = lessonData.response.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  parsedLesson = jsonMatch ? JSON.parse(jsonMatch[1]) : {};\n} catch (e) {\n  parsedLesson = {};\n}\n\n// Parse evaluation data\nlet parsedEvaluation;\ntry {\n  const jsonMatch = evaluationData.response.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  parsedEvaluation = jsonMatch ? JSON.parse(jsonMatch[1]) : {};\n} catch (e) {\n  parsedEvaluation = {};\n}\n\n// Combine data\nconst result = {\n  ...parsedLesson,\n  retention: parsedEvaluation.retention || 0,\n  feedback: parsedEvaluation.feedback || ''\n};\n\nreturn { json: result };"
+        "jsCode": "// Get lesson data and evaluation data\nconst lessonResponse = $json.response;\nconst evaluationData = $items('Parse Evaluation')[0].json;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n}\n\n// Combine data\nconst result = {\n  ...lessonData,\n  retention: evaluationData.retention || 0,\n  feedback: evaluationData.feedback || 'No feedback available'\n};\n\nreturn { json: result };"
       },
       "name": "Combine Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
+        160,
         112
       ],
       "id": "combine-data-node"
@@ -173,30 +171,18 @@
       "main": [
         [
           {
+            "node": "Parse Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Evaluation": {
+      "main": [
+        [
+          {
             "node": "Check Retention",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-
-    "Generate Advanced Lesson": {
-      "main": [
-        [
-          {
-            "node": "Merge with Retention",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Review Lesson": {
-      "main": [
-        [
-          {
-            "node": "Merge with Retention",
             "type": "main",
             "index": 0
           }
@@ -221,7 +207,18 @@
         ]
       ]
     },
-    "Merge with Retention": {
+    "Generate Advanced Lesson": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Review Lesson": {
       "main": [
         [
           {
@@ -239,22 +236,6 @@
             "node": "Respond",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Evaluate Answer": {
-      "main": [
-        [
-          {
-            "node": "Check Retention",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge with Retention",
-            "type": "main",
-            "index": 1
           }
         ]
       ]

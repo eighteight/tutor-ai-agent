@@ -62,12 +62,17 @@ export class ChatComponent implements OnInit {
           this.messages.splice(-1, 1); // Remove loading message first
           console.log('n8n response:', response);
           try {
-            const ollamaResponse = response.response || response;
-            const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
-            
-            if (jsonMatch) {
-              const tutorData = JSON.parse(jsonMatch[1]);
-              console.log('Parsed tutor data:', tutorData);
+            // Try to parse direct JSON response first
+            let tutorData;
+            if (typeof response === 'object' && response.retention !== undefined) {
+              tutorData = response;
+            } else {
+              // Fallback to parsing from response field
+              const ollamaResponse = response.response || response;
+              const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
+              tutorData = jsonMatch ? JSON.parse(jsonMatch[1]) : {};
+            }
+            console.log('Parsed tutor data:', tutorData);
               
               // Display retention score and feedback
               if (tutorData.retention !== undefined) {
