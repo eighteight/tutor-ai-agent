@@ -1,0 +1,37 @@
+<div class="graph-container">
+  <h2>Knowledge Graph</h2>
+  
+  <div *ngIf="loading" class="loading">Loading knowledge graph...</div>
+  
+  <div *ngIf="!loading && graphData" class="graph-content">
+    <div class="stats">
+      <div class="stat-item">
+        <strong>Nodes:</strong> {{ graphData.stats.total_nodes }}
+      </div>
+      <div class="stat-item">
+        <strong>Edges:</strong> {{ graphData.stats.total_edges }}
+      </div>
+      <div class="stat-item">
+        <strong>Topics:</strong> {{ graphData.stats.topics }}
+      </div>
+      <div class="stat-item">
+        <strong>Courses:</strong> {{ graphData.stats.courses }}
+      </div>
+    </div>
+
+    <div class="graph-visualization">
+      <canvas #canvas class="graph-canvas"></canvas>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color course"></div>
+        <span>Courses</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color topic"></div>
+        <span>Topics</span>
+      </div>
+    </div>
+  </div>
+</div>

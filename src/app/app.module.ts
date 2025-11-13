@@ -12,6 +12,7 @@ import { CourseComponent } from './course/course.component';
 import { LessonComponent } from './lesson/lesson.component';
 import { ChatComponent } from './chat/chat.component';
 import { ContentUploadComponent } from './content-upload/content-upload.component';
+import { KnowledgeGraphComponent } from './knowledge-graph/knowledge-graph.component';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { ContentUploadComponent } from './content-upload/content-upload.componen
     CourseComponent,
     LessonComponent,
     ChatComponent,
-    ContentUploadComponent
+    ContentUploadComponent,
+    KnowledgeGraphComponent
   ],
   imports: [
     BrowserModule,

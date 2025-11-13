@@ -2,6 +2,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -66,6 +67,44 @@ def get_courses():
     # Extract unique courses from knowledge base
     courses = list(knowledge_base.keys())
     return jsonify({"courses": courses})
+
+@app.route('/knowledge-graph', methods=['GET'])
+def get_knowledge_graph():
+    """Extract knowledge graph structure with nodes and relationships"""
+    nodes = []
+    edges = []
+    
+    # Create nodes for each topic/course
+    for i, (topic, content) in enumerate(knowledge_base.items()):
+        nodes.append({
+            "id": i,
+            "label": topic.title(),
+            "type": "course" if "Course:" in content else "topic",
+            "content": content[:100] + "..." if len(content) > 100 else content
+        })
+    
+    # Create edges based on content relationships
+    topics = list(knowledge_base.keys())
+    for i, topic1 in enumerate(topics):
+        content1 = knowledge_base[topic1].lower()
+        for j, topic2 in enumerate(topics):
+            if i != j and topic2 in content1:
+                edges.append({
+                    "from": i,
+                    "to": j,
+                    "label": "references"
+                })
+    
+    return jsonify({
+        "nodes": nodes,
+        "edges": edges,
+        "stats": {
+            "total_nodes": len(nodes),
+            "total_edges": len(edges),
+            "topics": len([n for n in nodes if n["type"] == "topic"]),
+            "courses": len([n for n in nodes if n["type"] == "course"])
+        }
+    })
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8000, debug=False)

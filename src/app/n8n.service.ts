@@ -21,4 +21,8 @@ export class N8nService {
 
     getCourses(): Observable<any> {
       return this.http.get('http://127.0.0.1:8000/courses');
+    }
+
+    getKnowledgeGraph(): Observable<any> {
+      return this.http.get('http://127.0.0.1:8000/knowledge-graph');
     }}
