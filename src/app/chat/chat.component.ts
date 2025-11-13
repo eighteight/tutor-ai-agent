@@ -62,61 +62,90 @@ export class ChatComponent implements OnInit {
           this.messages.splice(-1, 1); // Remove loading message first
           console.log('n8n response:', response);
           try {
-            // Try to parse direct JSON response first
+            console.log('Response type:', typeof response, 'Response:', response);
+            
+            // Handle different response types
             let tutorData;
             if (typeof response === 'object' && response.retention !== undefined) {
+              // Direct JSON response with retention
               tutorData = response;
+            } else if (typeof response === 'object' && response.message) {
+              // n8n workflow started message - wait for actual response
+              this.messages.push({ sender: 'tutor', text: 'Processing your answer...' });
+              this.isLoading = false;
+              this.message = '';
+              return;
             } else {
-              // Fallback to parsing from response field
-              const ollamaResponse = response.response || response;
-              const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
-              tutorData = jsonMatch ? JSON.parse(jsonMatch[1]) : {};
+              // Parse from response field
+              const ollamaResponse = response.response || JSON.stringify(response);
+              if (typeof ollamaResponse === 'string' && ollamaResponse.includes('```json')) {
+                const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                  tutorData = JSON.parse(jsonMatch[1]);
+                } else {
+                  this.messages.push({ sender: 'tutor', text: ollamaResponse });
+                  this.isLoading = false;
+                  this.message = '';
+                  return;
+                }
+              } else {
+                this.messages.push({ sender: 'tutor', text: JSON.stringify(response) });
+                this.isLoading = false;
+                this.message = '';
+                return;
+              }
             }
             console.log('Parsed tutor data:', tutorData);
               
-              // Display retention score and feedback
-              if (tutorData.retention !== undefined) {
-                const retentionPercent = Math.round(tutorData.retention * 100);
+            // Display retention score and feedback
+            if (tutorData.retention !== undefined) {
+              console.log('Raw retention value:', tutorData.retention, 'Type:', typeof tutorData.retention);
+              const retentionValue = parseFloat(tutorData.retention);
+              if (!isNaN(retentionValue)) {
+                let retentionPercent;
+                if (retentionValue > 1) {
+                  retentionPercent = Math.round(retentionValue);
+                } else {
+                  retentionPercent = Math.round(retentionValue * 100);
+                }
                 this.messages.push({
                   sender: 'tutor',
                   text: `**Retention Score: ${retentionPercent}%**`,
                   type: 'text'
                 });
               }
-              
-              if (tutorData.feedback) {
-                this.messages.push({
-                  sender: 'tutor',
-                  text: tutorData.feedback,
-                  type: 'text'
-                });
-              }
-              
-              // Display lesson content
-              if (tutorData.lesson_content && Array.isArray(tutorData.lesson_content)) {
-                tutorData.lesson_content.forEach((lesson: any) => {
-                  this.messages.push({ 
-                    sender: 'tutor', 
-                    text: `**${lesson.title}**\n\n${lesson.content}`,
-                    type: 'lesson'
-                  });
-                });
-              }
-              
-              // Display first question
-              if (tutorData.questions && Array.isArray(tutorData.questions) && tutorData.questions.length > 0) {
-                const firstQuestion = tutorData.questions[0];
-                this.currentQuestion = firstQuestion.question;
-                const options = firstQuestion.options && Array.isArray(firstQuestion.options) ? firstQuestion.options.join('\n') : '';
-                const questionText = `${firstQuestion.question}\n\n${options}`;
+            }
+            
+            if (tutorData.feedback) {
+              this.messages.push({
+                sender: 'tutor',
+                text: tutorData.feedback,
+                type: 'text'
+              });
+            }
+            
+            // Display lesson content
+            if (tutorData.lesson_content && Array.isArray(tutorData.lesson_content)) {
+              tutorData.lesson_content.forEach((lesson: any) => {
                 this.messages.push({ 
                   sender: 'tutor', 
-                  text: questionText,
-                  type: 'question'
+                  text: `**${lesson.title}**\n\n${lesson.content}`,
+                  type: 'lesson'
                 });
-              }
-            } else {
-              this.messages.push({ sender: 'tutor', text: ollamaResponse });
+              });
+            }
+            
+            // Display first question
+            if (tutorData.questions && Array.isArray(tutorData.questions) && tutorData.questions.length > 0) {
+              const firstQuestion = tutorData.questions[0];
+              this.currentQuestion = firstQuestion.question;
+              const options = firstQuestion.options && Array.isArray(firstQuestion.options) ? firstQuestion.options.join('\n') : '';
+              const questionText = `${firstQuestion.question}\n\n${options}`;
+              this.messages.push({ 
+                sender: 'tutor', 
+                text: questionText,
+                type: 'question'
+              });
             }
           } catch (error) {
             console.error('Error parsing response:', error, response);

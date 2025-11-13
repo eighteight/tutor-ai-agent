@@ -3,44 +3,23 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "lesson",
-        "options": {
-          "rawBody": true,
-          "responseMode": "json",
-          "responseFormat": "json"
-        }
-      },
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        240,
-        300
-      ],
-      "webhookId": "b895950c-3939-486e-a469-f1f35719722f"
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{({ model: 'Qwen2.5:7B', prompt: `Evaluate the following student's answer: '${$items(\"Webhook\")[0].json.body.answer}' to the question '${$items(\"Webhook\")[0].json.body.question}' on the topic '${$items(\"Webhook\")[0].json.body.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`, stream: false })}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Evaluate the following answer: '${$json.body.answer}' to the question '${$json.body.question}' on the topic '${$json.body.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
         "options": {
-          "response": {
-            "responseFormat": "json",
-            "fullResponse": false
-          }
+          "response": {}
         }
       },
       "name": "Evaluate Answer",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        460,
-        300
-      ]
+        -448,
+        112
+      ],
+      "id": "6a8725e6-c066-42e2-bb56-151f17ea359b"
     },
     {
       "parameters": {
@@ -58,9 +37,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        680,
-        300
-      ]
+        -224,
+        112
+      ],
+      "id": "c8128600-adac-42a9-b037-e7faf203f879"
     },
     {
       "parameters": {
@@ -68,71 +48,137 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{({ model: 'deepseek-r1:14b', prompt: `The student is doing well on the topic '${$items(\"Webhook\")[0].json.body.topic}'. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.`, stream: false })}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
-          "response": {
-            "responseFormat": "json",
-            "fullResponse": false
-          }
+          "response": {}
         }
       },
       "name": "Generate Advanced Lesson",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        900,
-        200
-      ]
+        0,
+        0
+      ],
+      "id": "f5f5df51-70ba-4c86-8633-dfcd9892094a"
     },
     {
       "parameters": {
-        "method": "POST",
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{({ model: 'deepseek-r1:14b', prompt: `The student is struggling with the topic '${$items(\"Webhook\")[0].json.body.topic}'. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.`, stream: false })}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is struggling with the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
-          "response": {
-            "responseFormat": "json",
-            "fullResponse": false
-          }
+          "response": {}
         }
       },
       "name": "Generate Review Lesson",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        900,
-        400
-      ]
+        80,
+        192
+      ],
+      "id": "04837b83-9af5-42c5-b07c-6f01da361554"
     },
     {
       "parameters": {
-        "body": "={{$json}}",
+        "jsCode": "// Get evaluation data from previous node\nconst evaluationResponse = $json.response;\n\n// Parse evaluation JSON\nlet evaluationData = {};\ntry {\n  const jsonMatch = evaluationResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    evaluationData = JSON.parse(jsonMatch[1]);\n  }\n} catch (e) {\n  console.log('Error parsing evaluation:', e);\n}\n\n// Store evaluation data for later use\nreturn {\n  json: {\n    ...evaluationData,\n    originalResponse: evaluationResponse\n  }\n};"
+      },
+      "name": "Parse Evaluation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        112
+      ],
+      "id": "parse-evaluation-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback'\n  }\n};"
+      },
+      "name": "Parse Lesson",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        112
+      ],
+      "id": "parse-lesson-node"
+    },
+    {
+      "parameters": {
         "options": {}
       },
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1120,
-        300
-      ]
+        288,
+        112
+      ],
+      "id": "a00de3a5-5212-4971-a79d-bc0b38c46e87"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.body.topic }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -496,
+        288
+      ],
+      "id": "b8959d79-a41a-4d14-9fd8-a4201462b46c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lesson",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "rawBody": false
+        }
+      },
+      "name": "webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        112
+      ],
+      "webhookId": "b895950c-3939-486e-a469-f1f35719722f",
+      "id": "ad5987da-ab24-4bb1-ad63-09fe793328b1"
     }
   ],
+  "pinData": {},
   "connections": {
-    "Webhook": {
+    "Evaluate Answer": {
       "main": [
         [
           {
-            "node": "Evaluate Answer",
+            "node": "Parse Evaluation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Evaluate Answer": {
+    "Parse Evaluation": {
       "main": [
         [
           {
@@ -156,7 +202,7 @@
           {
             "node": "Generate Review Lesson",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -165,7 +211,7 @@
       "main": [
         [
           {
-            "node": "Respond",
+            "node": "Parse Lesson",
             "type": "main",
             "index": 0
           }
@@ -176,7 +222,29 @@
       "main": [
         [
           {
+            "node": "Parse Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Lesson": {
+      "main": [
+        [
+          {
             "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Answer",
             "type": "main",
             "index": 0
           }
@@ -184,7 +252,14 @@
       ]
     }
   },
-  "active": false,
-  "settings": {},
-  "id": "3"
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "41d94cdb-0ffb-4eae-94f8-a9eedb08af10",
+  "meta": {
+    "instanceId": "6cfed0e1fa0726bcbe6230dbc4227b0ec51ca367dcec7ea73cfb23508f53e66d"
+  },
+  "id": "7AeqD3Lg3BLdVQ2o",
+  "tags": []
 }

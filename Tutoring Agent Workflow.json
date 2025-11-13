@@ -7,7 +7,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"model\": \"Qwen2.5:7B\",\n  \"prompt\": \"Evaluate the following answer: '{{ $json.body.answer }}' to the question '{{ $json.body.question }}' on the topic '{{ $json.body.topic }}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields and copy the input json as a 'input' field.\",\n  \"stream\": false\n}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Evaluate the following answer: '${$json.body.answer}' to the question '${$json.body.question}' on the topic '${$json.body.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -48,7 +48,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"model\": \"deepseek-r1:14b\",\n  \"prompt\": \"The student is doing well on the topic '{{$items(\\\"Webhook\\\")[0].json.body.topic}}'. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.\",\n  \"stream\": false\n}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -67,7 +67,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"model\": \"deepseek-r1:14b\",\n  \"prompt\": \"The student is struggling with the topic '{{$items(\\\"Webhook\\\")[0].json.body.topic}}'. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content' and an array of 'questions'.\",\n  \"stream\": false\n}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is struggling with the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -96,16 +96,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get lesson data and evaluation data\nconst lessonResponse = $json.response;\nconst evaluationData = $items('Parse Evaluation')[0].json;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n}\n\n// Combine data\nconst result = {\n  ...lessonData,\n  retention: evaluationData.retention || 0,\n  feedback: evaluationData.feedback || 'No feedback available'\n};\n\nreturn { json: result };"
+        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback'\n  }\n};"
       },
-      "name": "Combine Data",
+      "name": "Parse Lesson",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
+        200,
         112
       ],
-      "id": "combine-data-node"
+      "id": "parse-lesson-node"
     },
     {
       "parameters": {
@@ -211,7 +211,7 @@
       "main": [
         [
           {
-            "node": "Combine Data",
+            "node": "Parse Lesson",
             "type": "main",
             "index": 0
           }
@@ -222,14 +222,14 @@
       "main": [
         [
           {
-            "node": "Combine Data",
+            "node": "Parse Lesson",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Combine Data": {
+    "Parse Lesson": {
       "main": [
         [
           {
