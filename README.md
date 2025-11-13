@@ -45,6 +45,10 @@ LightRAG serves as the intelligent knowledge base that:
 ![Interactive Chat](screenshots/use-course.png)
 *Course-specific chat with AI evaluation and adaptive lessons*
 
+### Knowledge Graph
+![Knowledge Graph](screenshots/knowledge-graph.png)
+*Interactive D3.js visualization of course relationships with clickable tooltips*
+
 ### n8n workflow
 ![AI Feedback](screenshots/n8n-workflow.png)
 *Receive personalized feedback and retention scores using n8n workflow*
@@ -139,6 +143,7 @@ Access the app at `http://localhost:4200`
 - `GET /courses` - List all available courses
 - `POST /insert` - Upload new course content
 - `POST /query` - Query course content for tutoring
+- `GET /knowledge-graph` - Get knowledge graph nodes and relationships
 
 ### n8n Workflow (Port 5678)
 - `POST /webhook/lesson` - Process student answers and generate lessons

@@ -32,7 +32,7 @@
   margin-bottom: 20px;
 }
 
-.graph-canvas {
+.d3-container {
   border: 1px solid #ddd;
   border-radius: 8px;
   background: #fafafa;
