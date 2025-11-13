@@ -31,6 +31,24 @@ LightRAG serves as the intelligent knowledge base that:
 - **Contextual Feedback**: Uses course-specific knowledge for relevant guidance
 - **Dynamic Questions**: Creates follow-up questions based on student progress
 
+## Screenshots
+
+### Course Browser
+![Course Browser](screenshots/main-screen.png)
+*Browse available courses from the LightRAG knowledge base*
+
+### Create Course
+![Create Course](screenshots/create-course.png)
+*Add new courses with structured content (Course/Topic/Content format)*
+
+### Interactive Tutoring
+![Interactive Chat](screenshots/use-course.png)
+*Course-specific chat with AI evaluation and adaptive lessons*
+
+### n8n workflow
+![AI Feedback](screenshots/n8n-workflow.png)
+*Receive personalized feedback and retention scores using n8n workflow*
+
 ## Prerequisites (macOS/Linux)
 
 - Node.js 16+ and npm
@@ -96,7 +114,7 @@ Access the app at `http://localhost:4200`
 ## Usage
 
 ### Adding Course Content
-1. Navigate to "Upload Content" page
+1. Navigate to "Create Course" page
 2. Fill in the form with structured content:
    ```
    Course: JavaScript Basics
@@ -105,7 +123,7 @@ Access the app at `http://localhost:4200`
    JavaScript has three ways to declare variables: let, const, and var.
    let is block-scoped and can be reassigned...
    ```
-3. Click "Upload Content" - course will appear in courses list
+3. Click "Create Course" - course will appear in courses list
 
 ### Learning Experience
 1. **Browse Courses**: View all available courses on the home page
