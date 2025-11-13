@@ -1,7 +1,7 @@
 <div class="upload-container">
-  <h2>Upload Course Content</h2>
+  <h2>Create Course</h2>
   
-  <form (ngSubmit)="uploadContent()" #uploadForm="ngForm">
+  <form (ngSubmit)="createCourse()" #uploadForm="ngForm">
     <mat-form-field appearance="outline">
       <mat-label>Course Name</mat-label>
       <input matInput [(ngModel)]="course" name="course" required>
@@ -17,8 +17,8 @@
       <textarea matInput [(ngModel)]="content" name="content" rows="10" required></textarea>
     </mat-form-field>
 
-    <button mat-raised-button color="primary" type="submit" [disabled]="isUploading || !uploadForm.valid">
-      {{ isUploading ? 'Uploading...' : 'Upload Content' }}
+    <button mat-raised-button color="primary" type="submit" [disabled]="isCreating || !uploadForm.valid">
+      {{ isCreating ? 'Creating...' : 'Create Course' }}
     </button>
   </form>
 

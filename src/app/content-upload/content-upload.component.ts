@@ -10,29 +10,29 @@ export class ContentUploadComponent {
   course = '';
   topic = '';
   content = '';
-  isUploading = false;
+  isCreating = false;
   message = '';
 
   constructor(private n8nService: N8nService) {}
 
-  uploadContent() {
+  createCourse() {
     if (!this.course || !this.topic || !this.content) {
       this.message = 'Please fill all fields';
       return;
     }
 
-    this.isUploading = true;
+    this.isCreating = true;
     const structuredContent = `Course: ${this.course}\nTopic: ${this.topic}\n\n${this.content}`;
     
     this.n8nService.uploadContent(structuredContent).subscribe({
       next: (response) => {
-        this.message = 'Content uploaded successfully!';
+        this.message = 'Course created successfully!';
         this.resetForm();
-        this.isUploading = false;
+        this.isCreating = false;
       },
       error: (error) => {
-        this.message = 'Upload failed. Please try again.';
-        this.isUploading = false;
+        this.message = 'Course creation failed. Please try again.';
+        this.isCreating = false;
       }
     });
   }

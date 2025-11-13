@@ -4,7 +4,7 @@
   <div *ngIf="isLoading" class="loading">Loading courses...</div>
   
   <div *ngIf="!isLoading && courses.length === 0" class="no-courses">
-    No courses available. <a routerLink="/upload">Upload some content</a> to get started.
+    No courses available. <a routerLink="/upload">Create a course</a> to get started.
   </div>
   
   <div *ngIf="!isLoading && courses.length > 0" class="course-grid">
