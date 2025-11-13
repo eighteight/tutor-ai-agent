@@ -1,7 +1,16 @@
-<h2>Course Outline</h2>
-<ul>
-  <li><a routerLink="/lesson/1">Lesson 1: Introduction</a></li>
-  <li><a routerLink="/lesson/2">Lesson 2: Core Concepts</a></li>
-  <li><a routerLink="/lesson/3">Lesson 3: Advanced Topics</a></li>
-  <li><a routerLink="/chat">Interactive Chat</a></li>
-</ul>
+<div class="courses-container">
+  <h1>Available Courses</h1>
+  
+  <div *ngIf="isLoading" class="loading">Loading courses...</div>
+  
+  <div *ngIf="!isLoading && courses.length === 0" class="no-courses">
+    No courses available. <a routerLink="/upload">Upload some content</a> to get started.
+  </div>
+  
+  <div *ngIf="!isLoading && courses.length > 0" class="course-grid">
+    <div *ngFor="let course of courses" class="course-card">
+      <h3>{{ course }}</h3>
+      <a [routerLink]="['/chat']" [queryParams]="{course: course}" class="start-btn">Start Learning</a>
+    </div>
+  </div>
+</div>

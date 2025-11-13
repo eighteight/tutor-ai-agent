@@ -11,6 +11,14 @@ export class N8nService {
 
   constructor(private http: HttpClient) { }
 
-    sendMessage(topic: string, question: string, answer: string): Observable<any> {
-      return this.http.post(`${this.n8nUrl}/webhook/lesson`, { topic, question, answer });
+    sendMessage(topic: string, question: string, answer: string, course?: string): Observable<any> {
+      return this.http.post(`${this.n8nUrl}/webhook/lesson`, { topic, question, answer, course });
+    }
+
+    uploadContent(content: string): Observable<any> {
+      return this.http.post('http://127.0.0.1:8000/insert', { content });
+    }
+
+    getCourses(): Observable<any> {
+      return this.http.get('http://127.0.0.1:8000/courses');
     }}

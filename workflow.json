@@ -4,10 +4,30 @@
     {
       "parameters": {
         "method": "POST",
+        "url": "http://127.0.0.1:8000/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    question: `${$json.body.topic} ${$json.body.question}`,\n    course: $json.body.course || 'sample-course',\n    originalData: $json.body\n  })\n}}",
+        "options": {
+          "response": {}
+        }
+      },
+      "name": "Retrieve Course Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -550,
+        112
+      ],
+      "id": "rag-retrieval-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Evaluate the following answer: '${$json.body.answer}' to the question '${$json.body.question}' on the topic '${$json.body.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Based on this course content:\n${$json.courseContent}\n\nEvaluate the following answer: '${$json.answer}' to the question '${$json.question}' on the topic '${$json.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -48,7 +68,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Based on this course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nThe student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions based on the course content. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -67,7 +87,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `The student is struggling with the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a review lesson and three new questions to reinforce the concepts. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Based on this course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nThe student is struggling with the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a review lesson and three new questions based on the course content to reinforce the concepts. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -83,7 +103,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get evaluation data from previous node\nconst evaluationResponse = $json.response;\n\n// Parse evaluation JSON\nlet evaluationData = {};\ntry {\n  const jsonMatch = evaluationResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    evaluationData = JSON.parse(jsonMatch[1]);\n  }\n} catch (e) {\n  console.log('Error parsing evaluation:', e);\n}\n\n// Store evaluation data for later use\nreturn {\n  json: {\n    ...evaluationData,\n    originalResponse: evaluationResponse\n  }\n};"
+        "jsCode": "// Get evaluation data from previous node\nconst evaluationResponse = $json.response;\n\n// Parse evaluation JSON\nlet evaluationData = {};\ntry {\n  // First try to parse as direct JSON\n  evaluationData = JSON.parse(evaluationResponse);\n} catch (e) {\n  try {\n    // Fallback: try to extract from markdown code blocks\n    const jsonMatch = evaluationResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n      evaluationData = JSON.parse(jsonMatch[1]);\n    }\n  } catch (e2) {\n    console.log('Error parsing evaluation:', e2);\n    evaluationData = { feedback: 'Parse error', retention: 0 };\n  }\n}\n\n// Store evaluation data for later use\nreturn {\n  json: {\n    ...evaluationData,\n    originalResponse: evaluationResponse\n  }\n};"
       },
       "name": "Parse Evaluation",
       "type": "n8n-nodes-base.code",
@@ -241,6 +261,17 @@
       ]
     },
     "webhook": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Course Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Course Content": {
       "main": [
         [
           {

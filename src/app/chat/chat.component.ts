@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { N8nService } from '../n8n.service';
 
 interface Message {
@@ -34,15 +35,42 @@ export class ChatComponent implements OnInit {
 
   message: string = 'Paris';
   messages: Message[] = [];
-  topic: string = 'French History'; // Example topic
-  currentQuestion: string = 'What is the capital of France?';
+  topic: string = 'General Programming';
+  selectedCourse: string = '';
+  currentQuestion: string = '';
   isLoading: boolean = false;
 
-  constructor(private n8nService: N8nService) { }
+  constructor(private n8nService: N8nService, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    this.messages.push({ sender: 'tutor', text: `Let's start with the topic: ${this.topic}` });
-    this.messages.push({ sender: 'tutor', text: this.currentQuestion });
+    this.route.queryParams.subscribe(params => {
+      this.selectedCourse = params['course'] || '';
+      if (this.selectedCourse) {
+        this.topic = this.selectedCourse;
+        this.currentQuestion = this.getInitialQuestion(this.selectedCourse);
+        this.messages = [];
+        this.messages.push({ sender: 'tutor', text: `Let's start learning ${this.selectedCourse}!` });
+        this.messages.push({ sender: 'tutor', text: this.currentQuestion });
+      } else {
+        this.currentQuestion = 'What would you like to learn about?';
+        this.messages.push({ sender: 'tutor', text: `Let's start with the topic: ${this.topic}` });
+        this.messages.push({ sender: 'tutor', text: this.currentQuestion });
+      }
+    });
+  }
+
+  getInitialQuestion(course: string): string {
+    const questions: { [key: string]: string } = {
+      'variables': 'What is the difference between let and const in JavaScript?',
+      'functions': 'How do you define a function in JavaScript?',
+      'arrays': 'How do you create an array and add elements to it?',
+      'objects': 'What is the syntax for creating an object in JavaScript?',
+      'python': 'How do you create a list in Python?',
+      'loops': 'What is the difference between for and while loops?',
+      'classes': 'How do you define a class in programming?',
+      'async': 'What is asynchronous programming and why is it useful?'
+    };
+    return questions[course] || 'What would you like to learn about this topic?';
   }
 
   formatMessage(text: string): string {
@@ -57,7 +85,7 @@ export class ChatComponent implements OnInit {
       this.isLoading = true;
       this.messages.push({ sender: 'tutor', text: 'Evaluating your answer', type: 'loading' });
 
-      this.n8nService.sendMessage(this.topic, this.currentQuestion, this.message).subscribe({
+      this.n8nService.sendMessage(this.topic, this.currentQuestion, this.message, this.selectedCourse).subscribe({
         next: (response) => {
           this.messages.splice(-1, 1); // Remove loading message first
           console.log('n8n response:', response);
