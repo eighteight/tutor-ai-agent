@@ -27,7 +27,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Based on this course content:\n${$json.courseContent}\n\nEvaluate the following answer: '${$json.answer}' to the question '${$json.question}' on the topic '${$json.topic}'. Provide feedback and a retention score from 0 to 1. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'Qwen2.5:7B',\n    prompt: `Based on this course content:\n${$json.courseContent}\n\nEvaluate the following answer: '${$json.answer}' to the question '${$json.question}' on the topic '${$json.topic}'. If the answer mentions all three ways (let, const, var), give retention score 0.8 or higher. If partially correct, give 0.4-0.6. If wrong, give 0.2 or lower. Return ONLY a JSON object with 'feedback' and 'retention' fields.`,\n    stream: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -44,11 +44,11 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "number": [
             {
-              "value1": "{{$json.json.retention}}",
-              "operation": "largerEqual",
-              "value2": "0.7"
+              "value1": "={{$json.retention}}",
+              "operation": "smaller",
+              "value2": 0.7
             }
           ]
         }
@@ -84,6 +84,7 @@
     },
     {
       "parameters": {
+        "method": "POST",
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
@@ -116,16 +117,29 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback'\n  }\n};"
+        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate ADVANCED lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback',\n    lessonType: 'advanced'\n  }\n};"
       },
-      "name": "Parse Lesson",
+      "name": "Parse Advanced Lesson",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        0
+      ],
+      "id": "parse-advanced-lesson-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate REVIEW lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback',\n    lessonType: 'review'\n  }\n};"
+      },
+      "name": "Parse Review Lesson",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         200,
-        112
+        192
       ],
-      "id": "parse-lesson-node"
+      "id": "parse-review-lesson-node"
     },
     {
       "parameters": {
@@ -213,14 +227,14 @@
       "main": [
         [
           {
-            "node": "Generate Advanced Lesson",
+            "node": "Generate Review Lesson",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Generate Review Lesson",
+            "node": "Generate Advanced Lesson",
             "type": "main",
             "index": 0
           }
@@ -231,7 +245,7 @@
       "main": [
         [
           {
-            "node": "Parse Lesson",
+            "node": "Parse Advanced Lesson",
             "type": "main",
             "index": 0
           }
@@ -242,14 +256,25 @@
       "main": [
         [
           {
-            "node": "Parse Lesson",
+            "node": "Parse Review Lesson",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse Lesson": {
+    "Parse Advanced Lesson": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Review Lesson": {
       "main": [
         [
           {
