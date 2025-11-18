@@ -42,6 +42,7 @@ export class ChatComponent implements OnInit {
   isLoading: boolean = false;
   availableQuestions: any[] = [];
   selectedQuestionIndex: number = 0;
+  retentionHistory: number[] = [];
 
   constructor(private n8nService: N8nService, private route: ActivatedRoute) { }
 
@@ -194,7 +195,12 @@ export class ChatComponent implements OnInit {
                 // Play sound based on retention
                 this.playRetentionSound(retentionValue);
 
-                statusParts.push(`Retention: <span class="retention-${retentionColor}">${retentionPercent}%</span>`);
+                // Track retention for average calculation
+                this.retentionHistory.push(retentionValue);
+                const avgRetention = this.retentionHistory.reduce((a, b) => a + b, 0) / this.retentionHistory.length;
+                const avgRetentionPercent = Math.round(avgRetention * 100);
+
+                statusParts.push(`Retention: <span class="retention-${retentionColor}">${retentionPercent}%</span> | Avg: ${avgRetentionPercent}%`);
               }
             }
 
