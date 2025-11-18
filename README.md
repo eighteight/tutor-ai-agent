@@ -155,8 +155,26 @@ Access the app at `http://localhost:4200`
 - **Missing Models**: Verify Ollama models are installed and running
 - **Database Issues**: Restart n8n if SQLite permissions cause problems
 
+## Testing
+
+### End-to-End Tests
+Run automated tests that verify the complete tutoring workflow:
+
+```bash
+npm run test:e2e
+```
+
+The test suite:
+- Tests multiple course topics (variables, functions, arrays)
+- Sends student answers through the n8n workflow
+- Verifies retention scores, feedback, and lesson content are returned
+- Validates the complete LightRAG → n8n → Ollama pipeline
+
+**Prerequisites**: All services must be running (LightRAG, n8n, Ollama)
+
 ## Development
 
 - **LightRAG Server**: `lightrag-server.py` - Flask API for knowledge management
 - **n8n Workflow**: `workflow.json` - AI orchestration and evaluation logic
 - **Angular App**: `src/app/` - Frontend components and services
+- **E2E Tests**: `e2e-test.js` - End-to-end workflow testing

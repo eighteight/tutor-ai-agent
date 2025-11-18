@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:e2e": "node e2e-test.js",
     "n8n": "n8n start",
     "n8n:import": "cp 'Tutoring Agent Workflow.json' workflow.json && n8n import:workflow --input=workflow.json --update && n8n update:workflow --id='Tutoring Agent Workflow' --active=true",
     "lightrag": "python3 lightrag-server.py",
