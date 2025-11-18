@@ -96,13 +96,26 @@
     },
     {
       "parameters": {
+        "jsCode": "// Get retention from Parse Evaluation node\nconst retention = $('Parse Evaluation').first().json.retention;\nconst feedback = $('Parse Evaluation').first().json.feedback;\n\n// Get lesson response from current node\nconst lessonResponse = $json.response;\n\n// Return merged response with retention\nreturn {\n  json: {\n    response: lessonResponse,\n    retention: retention,\n    feedback: feedback\n  }\n};"
+      },
+      "name": "Merge Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        96
+      ],
+      "id": "merge-response-node"
+    },
+    {
+      "parameters": {
         "options": {}
       },
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        688,
+        912,
         96
       ],
       "id": "a00de3a5-5212-4971-a79d-bc0b38c46e87"
@@ -189,7 +202,7 @@
       "main": [
         [
           {
-            "node": "Respond",
+            "node": "Merge Response",
             "type": "main",
             "index": 0
           }
@@ -197,6 +210,17 @@
       ]
     },
     "Generate Review Lesson": {
+      "main": [
+        [
+          {
+            "node": "Merge Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Response": {
       "main": [
         [
           {
