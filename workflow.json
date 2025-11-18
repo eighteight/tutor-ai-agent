@@ -47,7 +47,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is doing well. Create an advanced lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false,\n    think: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is doing well. Create an advanced lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false,\n    think: false,\n    lessonType: 'advanced'\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -67,7 +67,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is struggling. Create a review lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is struggling. Create a review lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false,\n    lessonType: 'review'\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -96,7 +96,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get retention from Parse Evaluation node\nconst retention = $('Parse Evaluation').first().json.retention;\nconst feedback = $('Parse Evaluation').first().json.feedback;\n\n// Get lesson response from current node\nconst lessonResponse = $json.response;\n\n// Return merged response with retention\nreturn {\n  json: {\n    response: lessonResponse,\n    retention: retention,\n    feedback: feedback\n  }\n};"
+        "jsCode": "// Get retention from Parse Evaluation node\nconst retention = $('Parse Evaluation').first().json.retention;\nconst feedback = $('Parse Evaluation').first().json.feedback;\n\n// Get lesson response from current node\nconst lessonResponse = $json.response;\n\n// Detect language from course content\nconst courseContent = $('Retrieve Course Content').first().json.courseContent;\nconst hasCyrillic = /[\\u0400-\\u04FF]/.test(courseContent);\nconst language = hasCyrillic ? 'ru' : 'en';\n\n// Determine lesson kind based on which node executed\nconst lessonKind = $json.lessonType || 'unknown';\n\n// Return merged response with retention, language, and lesson kind\nreturn {\n  json: {\n    response: lessonResponse,\n    retention: retention,\n    feedback: feedback,\n    language: language,\n    lesson_kind: lessonKind\n  }\n};"
       },
       "name": "Merge Response",
       "type": "n8n-nodes-base.code",

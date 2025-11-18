@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { N8nService } from '../n8n.service';
 
@@ -29,7 +29,8 @@ interface TutorResponse {
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.css']
+  styleUrls: ['./chat.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class ChatComponent implements OnInit {
 
@@ -76,9 +77,30 @@ export class ChatComponent implements OnInit {
   }
 
   formatMessage(text: string): string {
+    // First preserve any existing HTML (like colored spans)
+    // Then apply markdown formatting
     return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
+  }
+
+  playRetentionSound(retentionValue: number): void {
+    let soundFile = '';
+    
+    if (retentionValue > 0.75) {
+      // Success sound
+      soundFile = 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3';
+    } else if (retentionValue >= 0.5) {
+      // Neutral sound
+      soundFile = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+    } else {
+      // Fail sound
+      soundFile = 'https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3';
+    }
+    
+    const audio = new Audio(soundFile);
+    audio.volume = 0.25;
+    audio.play().catch(err => console.log('Audio play failed:', err));
   }
 
   sendChatMessage(): void {
@@ -87,8 +109,8 @@ export class ChatComponent implements OnInit {
       this.isLoading = true;
       this.messages.push({ sender: 'tutor', text: 'Evaluating your answer', type: 'loading' });
 
-      const questionToSend = this.availableQuestions.length > 0 
-        ? this.availableQuestions[this.selectedQuestionIndex].question 
+      const questionToSend = this.availableQuestions.length > 0
+        ? this.availableQuestions[this.selectedQuestionIndex].question
         : this.currentQuestion;
       this.n8nService.sendMessage(this.topic, questionToSend, this.message, this.selectedCourse).subscribe({
         next: (response) => {
@@ -102,7 +124,9 @@ export class ChatComponent implements OnInit {
             let tutorData;
             let retention = response.retention;
             let feedback = response.feedback;
-            
+            let language = response.language;
+            let lessonKind = response.lesson_kind;
+
             if (typeof response === 'object' && response.message) {
               // n8n workflow started message - wait for actual response
               this.messages.push({ sender: 'tutor', text: 'Processing your answer...' });
@@ -127,23 +151,59 @@ export class ChatComponent implements OnInit {
             }
             console.log('Parsed tutor data:', tutorData);
 
-            // Display retention score and feedback
+            // Display language, lesson type, and retention score in one line
+            const statusParts = [];
+            let retentionColor = '';
+
+            if (language) {
+              const languageName = language === 'ru' ? 'Russian' : 'English';
+              statusParts.push(`Language: ${languageName}`);
+            }
+
+            if (lessonKind) {
+              const lessonType = lessonKind === 'advanced' ? 'Advanced' : 'Review';
+              statusParts.push(`Lesson: ${lessonType}`);
+            }
+
             if (retention !== undefined) {
               console.log('Raw retention value:', retention, 'Type:', typeof retention);
-              const retentionValue = parseFloat(retention);
+              let retentionValue = parseFloat(retention);
+              console.log('Parsed retention value:', retentionValue);
               if (!isNaN(retentionValue)) {
-                let retentionPercent;
+                // Normalize to 0-1 range if needed
                 if (retentionValue > 1) {
-                  retentionPercent = Math.round(retentionValue);
-                } else {
-                  retentionPercent = Math.round(retentionValue * 100);
+                  retentionValue = retentionValue / 100;
                 }
-                this.messages.push({
-                  sender: 'tutor',
-                  text: `**Retention Score: ${retentionPercent}%**`,
-                  type: 'text'
-                });
+                console.log('Normalized retention value:', retentionValue);
+
+                const retentionPercent = Math.round(retentionValue * 100);
+
+                // Determine color based on normalized retention value (0-1)
+                if (retentionValue < 0.5) {
+                  retentionColor = 'red';
+                  console.log('Color: red (< 0.5)');
+                } else if (retentionValue <= 0.75) {
+                  retentionColor = 'orange';
+                  console.log('Color: orange (0.5-0.75)');
+                } else {
+                  retentionColor = 'green';
+                  console.log('Color: green (> 0.75)');
+                }
+                console.log('Final color:', retentionColor, 'Percent:', retentionPercent);
+
+                // Play sound based on retention
+                this.playRetentionSound(retentionValue);
+
+                statusParts.push(`Retention: <span class="retention-${retentionColor}">${retentionPercent}%</span>`);
               }
+            }
+
+            if (statusParts.length > 0) {
+              this.messages.push({
+                sender: 'tutor',
+                text: `<strong>${statusParts.join(' | ')}</strong>`,
+                type: 'text'
+              });
             }
 
             if (feedback) {

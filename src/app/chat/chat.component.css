@@ -91,3 +91,18 @@
   margin-left: 10px;
   cursor: pointer;
 }
+
+.retention-red {
+  color: red !important;
+  font-weight: bold;
+}
+
+.retention-orange {
+  color: orange !important;
+  font-weight: bold;
+}
+
+.retention-green {
+  color: green !important;
+  font-weight: bold;
+}
