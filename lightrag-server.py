@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import re
+import PyPDF2
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -61,6 +63,43 @@ def insert():
         knowledge_base[course_name] = content
     
     return jsonify({"status": "inserted", "course": course_name})
+
+@app.route('/upload-pdf', methods=['POST'])
+def upload_pdf():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if not file.filename.endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are supported"}), 400
+    
+    try:
+        # Read PDF content
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
+        text_content = ''
+        for page in pdf_reader.pages:
+            text_content += page.extract_text() + '\n'
+        
+        # Extract course name from content
+        course_name = extract_course_name(text_content)
+        if not course_name:
+            # Use filename as course name if not found in content
+            course_name = file.filename.replace('.pdf', '').lower().replace(' ', '-')
+        
+        # Store in knowledge base
+        knowledge_base[course_name] = text_content
+        
+        return jsonify({
+            "status": "inserted",
+            "course": course_name,
+            "pages": len(pdf_reader.pages),
+            "characters": len(text_content)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/courses', methods=['GET'])
 def get_courses():

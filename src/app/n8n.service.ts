@@ -19,6 +19,12 @@ export class N8nService {
       return this.http.post('http://127.0.0.1:8000/insert', { content });
     }
 
+    uploadPDF(file: File): Observable<any> {
+      const formData = new FormData();
+      formData.append('file', file);
+      return this.http.post('http://127.0.0.1:8000/upload-pdf', formData);
+    }
+
     getCourses(): Observable<any> {
       return this.http.get('http://127.0.0.1:8000/courses');
     }

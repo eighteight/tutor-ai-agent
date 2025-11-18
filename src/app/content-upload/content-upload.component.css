@@ -21,3 +21,25 @@ button {
   background-color: #e8f5e8;
   color: #2e7d32;
 }
+
+.upload-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+}
+
+.upload-section h3 {
+  margin-top: 0;
+}
+
+.upload-section input[type="file"] {
+  margin-bottom: 12px;
+}
+
+.divider {
+  text-align: center;
+  margin: 24px 0;
+  font-weight: bold;
+  color: #666;
+}

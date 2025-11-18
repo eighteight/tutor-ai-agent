@@ -72,7 +72,7 @@ npm install
 
 ### 2. Install LightRAG Dependencies
 ```bash
-pip3 install flask flask-cors lightrag
+pip3 install flask flask-cors lightrag PyPDF2
 ```
 
 ### 3. Setup n8n
@@ -118,6 +118,13 @@ Access the app at `http://localhost:4200`
 ## Usage
 
 ### Adding Course Content
+
+**Option 1: Upload PDF**
+1. Navigate to "Create Course" page
+2. Click "Choose File" and select a PDF document
+3. Click "Upload PDF" - content will be extracted and stored
+
+**Option 2: Manual Entry**
 1. Navigate to "Create Course" page
 2. Fill in the form with structured content:
    ```

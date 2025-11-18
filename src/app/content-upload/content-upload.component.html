@@ -1,6 +1,16 @@
 <div class="upload-container">
   <h2>Create Course</h2>
   
+  <div class="upload-section">
+    <h3>Upload PDF</h3>
+    <input type="file" accept=".pdf" (change)="onFileSelected($event)" #fileInput>
+    <button mat-raised-button color="accent" (click)="uploadPDF()" [disabled]="isCreating || !selectedFile">
+      {{ isCreating ? 'Uploading...' : 'Upload PDF' }}
+    </button>
+  </div>
+
+  <div class="divider">OR</div>
+  
   <form (ngSubmit)="createCourse()" #uploadForm="ngForm">
     <mat-form-field appearance="outline">
       <mat-label>Course Name</mat-label>
