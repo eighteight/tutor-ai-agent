@@ -100,27 +100,37 @@ export class ChatComponent implements OnInit {
             console.log('n8n response:', response);
             // Handle different response types
             let tutorData;
-            if (typeof response === 'object' && response.retention !== undefined) {
-              // Direct JSON response with retention
-              tutorData = response;
-            } else if (typeof response === 'object' && response.message) {
+            let retention = response.retention;
+            let feedback = response.feedback;
+            
+            if (typeof response === 'object' && response.message) {
               // n8n workflow started message - wait for actual response
               this.messages.push({ sender: 'tutor', text: 'Processing your answer...' });
               this.isLoading = false;
               this.message = '';
               return;
-            } else {
-              debugger;
+            } else if (typeof response === 'object' && response.response) {
               // Parse from response field
-              const ollamaResponse = response.response.replace(/<think>.*?<\/think>/s, '').replaceAll('```', '').replace('json', '');
+              let ollamaResponse = response.response;
+              // Remove <think> blocks
+              ollamaResponse = ollamaResponse.replace(/<think>[\s\S]*?<\/think>/g, '');
+              // Extract JSON from code blocks
+              const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
+              if (jsonMatch) {
+                ollamaResponse = jsonMatch[1];
+              }
+              // Clean up
+              ollamaResponse = ollamaResponse.trim();
               tutorData = JSON.parse(ollamaResponse);
+            } else {
+              tutorData = response;
             }
             console.log('Parsed tutor data:', tutorData);
 
             // Display retention score and feedback
-            if (tutorData.retention !== undefined) {
-              console.log('Raw retention value:', tutorData.retention, 'Type:', typeof tutorData.retention);
-              const retentionValue = parseFloat(tutorData.retention);
+            if (retention !== undefined) {
+              console.log('Raw retention value:', retention, 'Type:', typeof retention);
+              const retentionValue = parseFloat(retention);
               if (!isNaN(retentionValue)) {
                 let retentionPercent;
                 if (retentionValue > 1) {
@@ -136,10 +146,10 @@ export class ChatComponent implements OnInit {
               }
             }
 
-            if (tutorData.feedback) {
+            if (feedback) {
               this.messages.push({
                 sender: 'tutor',
-                text: tutorData.feedback,
+                text: feedback,
                 type: 'text'
               });
             }
@@ -148,11 +158,23 @@ export class ChatComponent implements OnInit {
             if (tutorData.lesson_content) {
               if (Array.isArray(tutorData.lesson_content)) {
                 tutorData.lesson_content.forEach((lesson: any) => {
-                  this.messages.push({
-                    sender: 'tutor',
-                    text: `**${lesson.title}**\n\n${lesson.content}`,
-                    type: 'lesson'
-                  });
+                  if (lesson.title && lesson.content) {
+                    // title/content structure
+                    this.messages.push({
+                      sender: 'tutor',
+                      text: `**${lesson.title}**\n\n${lesson.content}`,
+                      type: 'lesson'
+                    });
+                  } else if (lesson.type && lesson.content) {
+                    // type/content structure
+                    const title = lesson.type.toUpperCase();
+                    const content = Array.isArray(lesson.content) ? lesson.content.join('\n') : lesson.content;
+                    this.messages.push({
+                      sender: 'tutor',
+                      text: `**${title}**\n\n${content}`,
+                      type: 'lesson'
+                    });
+                  }
                 });
               } else if (typeof tutorData.lesson_content === 'object') {
                 const lesson = tutorData.lesson_content;
