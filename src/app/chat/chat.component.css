@@ -65,6 +65,14 @@
 
 .chat-input {
   display: flex;
+  gap: 10px;
+}
+
+.question-selector {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
 }
 
 .chat-input input {

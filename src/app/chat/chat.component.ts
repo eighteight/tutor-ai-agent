@@ -39,6 +39,8 @@ export class ChatComponent implements OnInit {
   selectedCourse: string = '';
   currentQuestion: string = '';
   isLoading: boolean = false;
+  availableQuestions: any[] = [];
+  selectedQuestionIndex: number = 0;
 
   constructor(private n8nService: N8nService, private route: ActivatedRoute) { }
 
@@ -85,13 +87,17 @@ export class ChatComponent implements OnInit {
       this.isLoading = true;
       this.messages.push({ sender: 'tutor', text: 'Evaluating your answer', type: 'loading' });
 
-      this.n8nService.sendMessage(this.topic, this.currentQuestion, this.message, this.selectedCourse).subscribe({
+      const questionToSend = this.availableQuestions.length > 0 
+        ? this.availableQuestions[this.selectedQuestionIndex].question 
+        : this.currentQuestion;
+      this.n8nService.sendMessage(this.topic, questionToSend, this.message, this.selectedCourse).subscribe({
         next: (response) => {
           this.messages.splice(-1, 1); // Remove loading message first
-          console.log('n8n response:', response);
+
           try {
             console.log('Response type:', typeof response, 'Response:', response);
-            
+
+            console.log('n8n response:', response);
             // Handle different response types
             let tutorData;
             if (typeof response === 'object' && response.retention !== undefined) {
@@ -104,27 +110,13 @@ export class ChatComponent implements OnInit {
               this.message = '';
               return;
             } else {
+              debugger;
               // Parse from response field
-              const ollamaResponse = response.response || JSON.stringify(response);
-              if (typeof ollamaResponse === 'string' && ollamaResponse.includes('```json')) {
-                const jsonMatch = ollamaResponse.match(/```json\s*([\s\S]*?)\s*```/);
-                if (jsonMatch) {
-                  tutorData = JSON.parse(jsonMatch[1]);
-                } else {
-                  this.messages.push({ sender: 'tutor', text: ollamaResponse });
-                  this.isLoading = false;
-                  this.message = '';
-                  return;
-                }
-              } else {
-                this.messages.push({ sender: 'tutor', text: JSON.stringify(response) });
-                this.isLoading = false;
-                this.message = '';
-                return;
-              }
+              const ollamaResponse = response.response.replace(/<think>.*?<\/think>/s, '').replaceAll('```', '').replace('json', '');
+              tutorData = JSON.parse(ollamaResponse);
             }
             console.log('Parsed tutor data:', tutorData);
-              
+
             // Display retention score and feedback
             if (tutorData.retention !== undefined) {
               console.log('Raw retention value:', tutorData.retention, 'Type:', typeof tutorData.retention);
@@ -143,7 +135,7 @@ export class ChatComponent implements OnInit {
                 });
               }
             }
-            
+
             if (tutorData.feedback) {
               this.messages.push({
                 sender: 'tutor',
@@ -151,35 +143,78 @@ export class ChatComponent implements OnInit {
                 type: 'text'
               });
             }
-            
+
             // Display lesson content
-            if (tutorData.lesson_content && Array.isArray(tutorData.lesson_content)) {
-              tutorData.lesson_content.forEach((lesson: any) => {
-                this.messages.push({ 
-                  sender: 'tutor', 
-                  text: `**${lesson.title}**\n\n${lesson.content}`,
-                  type: 'lesson'
+            if (tutorData.lesson_content) {
+              if (Array.isArray(tutorData.lesson_content)) {
+                tutorData.lesson_content.forEach((lesson: any) => {
+                  this.messages.push({
+                    sender: 'tutor',
+                    text: `**${lesson.title}**\n\n${lesson.content}`,
+                    type: 'lesson'
+                  });
                 });
-              });
+              } else if (typeof tutorData.lesson_content === 'object') {
+                const lesson = tutorData.lesson_content;
+                if (lesson.title && Array.isArray(lesson.content)) {
+                  this.messages.push({
+                    sender: 'tutor',
+                    text: `**${lesson.title}**`,
+                    type: 'lesson'
+                  });
+                  lesson.content.forEach((item: any) => {
+                    if (item.type === 'text' && item.content) {
+                      this.messages.push({
+                        sender: 'tutor',
+                        text: item.content,
+                        type: 'lesson'
+                      });
+                    } else if (item.title && item.description) {
+                      this.messages.push({
+                        sender: 'tutor',
+                        text: `**${item.title}**\n${item.description}`,
+                        type: 'lesson'
+                      });
+                    }
+                  });
+                } else if ((lesson.topic || lesson.advanced_topic) && Array.isArray(lesson.content)) {
+                  const topicTitle = lesson.topic || lesson.advanced_topic;
+                  this.messages.push({
+                    sender: 'tutor',
+                    text: `**${topicTitle}**`,
+                    type: 'lesson'
+                  });
+                  lesson.content.forEach((item: any) => {
+                    this.messages.push({
+                      sender: 'tutor',
+                      text: `**${item.title}**\n${item.description}`,
+                      type: 'lesson'
+                    });
+                  });
+                } else {
+                  const title = lesson.title || 'Lesson';
+                  if (typeof lesson.content === 'string') {
+                    this.messages.push({
+                      sender: 'tutor',
+                      text: `**${title}**\n\n${lesson.content}`,
+                      type: 'lesson'
+                    });
+                  }
+                }
+              }
             }
-            
-            // Display first question
+
+            // Store questions for dropdown selection
             if (tutorData.questions && Array.isArray(tutorData.questions) && tutorData.questions.length > 0) {
-              const firstQuestion = tutorData.questions[0];
-              this.currentQuestion = firstQuestion.question;
-              const options = firstQuestion.options && Array.isArray(firstQuestion.options) ? firstQuestion.options.join('\n') : '';
-              const questionText = `${firstQuestion.question}\n\n${options}`;
-              this.messages.push({ 
-                sender: 'tutor', 
-                text: questionText,
-                type: 'question'
-              });
+              this.availableQuestions = tutorData.questions;
+              this.selectedQuestionIndex = 0;
+              this.currentQuestion = tutorData.questions[0].question;
             }
           } catch (error) {
             console.error('Error parsing response:', error, response);
             this.messages.push({ sender: 'tutor', text: 'I received a response but had trouble parsing it.' });
           }
-          
+
           this.isLoading = false;
           this.message = ''; // Clear the input after sending
         },

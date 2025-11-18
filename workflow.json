@@ -16,8 +16,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        -550,
-        112
+        -432,
+        96
       ],
       "id": "rag-retrieval-node"
     },
@@ -36,31 +36,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        -448,
-        112
+        -208,
+        96
       ],
       "id": "6a8725e6-c066-42e2-bb56-151f17ea359b"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "{{$json.json.retention}}",
-              "operation": "largerEqual",
-              "value2": "0.7"
-            }
-          ]
-        }
-      },
-      "name": "Check Retention",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        -224,
-        112
-      ],
-      "id": "c8128600-adac-42a9-b037-e7faf203f879"
     },
     {
       "parameters": {
@@ -68,7 +47,7 @@
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Based on this course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nThe student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions based on the course content. Return ONLY a JSON object with 'lesson_content', 'questions'.`,\n    stream: false\n  })\n}}",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Based on this course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nThe student is doing well on the topic '${$('webhook').first().json.body.topic}' with retention score ${$('Parse Evaluation').first().json.retention}. Generate a more advanced lesson and three new questions based on the course content. Return a valid parsable JSON object with 'lesson_content', 'questions'.`,\n    stream: false,\n    think: false\n  })\n}}",
         "options": {
           "response": {}
         }
@@ -77,13 +56,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        0,
+        464,
         0
       ],
       "id": "f5f5df51-70ba-4c86-8633-dfcd9892094a"
     },
     {
       "parameters": {
+        "method": "POST",
         "url": "http://localhost:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
@@ -96,7 +76,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        80,
+        464,
         192
       ],
       "id": "04837b83-9af5-42c5-b07c-6f01da361554"
@@ -109,23 +89,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -300,
-        112
+        16,
+        96
       ],
       "id": "parse-evaluation-node"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Get lesson data from previous node\nconst lessonResponse = $json.response;\n\n// Parse lesson JSON\nlet lessonData = {};\ntry {\n  const jsonMatch = lessonResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    lessonData = JSON.parse(jsonMatch[1]);\n  } else {\n    lessonData = JSON.parse(lessonResponse);\n  }\n} catch (e) {\n  console.log('Error parsing lesson:', e);\n  lessonData = { lesson_content: 'Failed to generate lesson', questions: [] };\n}\n\n// Get evaluation data from Parse Evaluation node\nconst evalData = $('Parse Evaluation').first().json;\n\nreturn {\n  json: {\n    ...lessonData,\n    retention: evalData.retention || 0,\n    feedback: evalData.feedback || 'No feedback'\n  }\n};"
-      },
-      "name": "Parse Lesson",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        200,
-        112
-      ],
-      "id": "parse-lesson-node"
     },
     {
       "parameters": {
@@ -135,34 +102,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        288,
-        112
+        688,
+        96
       ],
       "id": "a00de3a5-5212-4971-a79d-bc0b38c46e87"
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "={{ $json.body.topic }}",
-        "options": {
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Content-Type",
-                "value": "text"
-              }
-            ]
-          }
-        }
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        -496,
-        288
-      ],
-      "id": "b8959d79-a41a-4d14-9fd8-a4201462b46c",
-      "name": "Respond to Webhook"
     },
     {
       "parameters": {
@@ -179,10 +122,43 @@
       "typeVersion": 1,
       "position": [
         -656,
-        112
+        96
       ],
       "webhookId": "b895950c-3939-486e-a469-f1f35719722f",
       "id": "ad5987da-ab24-4bb1-ad63-09fe793328b1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "56a15092-d778-4143-9f01-0eccbb6ea2c9",
+              "leftValue": "={{ $json.retention }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        96
+      ],
+      "id": "0abd6877-cf00-4040-bfd4-596863c032a3",
+      "name": "Evaluate Retention"
     }
   ],
   "pinData": {},
@@ -202,25 +178,7 @@
       "main": [
         [
           {
-            "node": "Check Retention",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Retention": {
-      "main": [
-        [
-          {
-            "node": "Generate Advanced Lesson",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Generate Review Lesson",
+            "node": "Evaluate Retention",
             "type": "main",
             "index": 0
           }
@@ -231,7 +189,7 @@
       "main": [
         [
           {
-            "node": "Parse Lesson",
+            "node": "Respond",
             "type": "main",
             "index": 0
           }
@@ -239,17 +197,6 @@
       ]
     },
     "Generate Review Lesson": {
-      "main": [
-        [
-          {
-            "node": "Parse Lesson",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Lesson": {
       "main": [
         [
           {
@@ -281,15 +228,33 @@
           }
         ]
       ]
+    },
+    "Evaluate Retention": {
+      "main": [
+        [
+          {
+            "node": "Generate Advanced Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Review Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "41d94cdb-0ffb-4eae-94f8-a9eedb08af10",
+  "versionId": "6643c700-81e3-4b17-85d9-48c39c7c7f25",
   "meta": {
-    "instanceId": "6cfed0e1fa0726bcbe6230dbc4227b0ec51ca367dcec7ea73cfb23508f53e66d"
+    "instanceId": "59e1da128c2e44f2f88be481a95d3142e5421187487d3334a914f7e0baf0faf4"
   },
   "id": "7AeqD3Lg3BLdVQ2o",
   "tags": []

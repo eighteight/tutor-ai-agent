@@ -1,4 +1,4 @@
-# TutorAgent
+# Tutor AI Agent
 
 An intelligent tutoring system that provides personalized AI-powered education using LightRAG knowledge graphs. The system evaluates student answers, provides contextual feedback, and generates adaptive lessons based on performance.
 

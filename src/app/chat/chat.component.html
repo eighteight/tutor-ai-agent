@@ -11,6 +11,9 @@
     </div>
   </div>
   <div class="chat-input">
+    <select *ngIf="availableQuestions.length > 0" [(ngModel)]="selectedQuestionIndex" class="question-selector">
+      <option *ngFor="let q of availableQuestions; let i = index" [value]="i">{{q.question}}</option>
+    </select>
     <input type="text" [(ngModel)]="message" placeholder="Type your answer..." (keyup.enter)="sendChatMessage()">
     <button (click)="sendChatMessage()" [disabled]="isLoading">{{ isLoading ? 'Evaluating...' : 'Send' }}</button>
   </div>
