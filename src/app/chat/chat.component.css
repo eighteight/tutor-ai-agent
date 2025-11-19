@@ -92,6 +92,22 @@
   cursor: pointer;
 }
 
+.mic-button {
+  padding: 10px 15px;
+  font-size: 20px;
+  background-color: #28a745;
+}
+
+.mic-button.recording {
+  background-color: #dc3545;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .retention-red {
   color: red !important;
   font-weight: bold;
@@ -105,4 +121,16 @@
 .retention-green {
   color: green !important;
   font-weight: bold;
+}
+
+.listening-indicator {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  color: #856404;
+  animation: pulse 1.5s infinite;
 }

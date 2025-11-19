@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, NgZone } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { N8nService } from '../n8n.service';
 
@@ -43,8 +43,50 @@ export class ChatComponent implements OnInit {
   availableQuestions: any[] = [];
   selectedQuestionIndex: number = 0;
   retentionHistory: number[] = [];
+  isRecording: boolean = false;
+  recognition: any = null;
+  currentLanguage: string = 'en-US';
 
-  constructor(private n8nService: N8nService, private route: ActivatedRoute) { }
+  constructor(private n8nService: N8nService, private route: ActivatedRoute, private ngZone: NgZone) {
+    // Initialize speech recognition if available
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.lang = this.currentLanguage;
+      
+      this.recognition.onstart = () => {
+        console.log('Speech recognition started');
+      };
+      
+      this.recognition.onresult = (event: any) => {
+        console.log('Speech recognition result:', event);
+        const transcript = event.results[0][0].transcript;
+        console.log('Transcript:', transcript);
+        this.ngZone.run(() => {
+          console.log('Setting message to:', transcript);
+          this.message = transcript;
+          console.log('Message is now:', this.message);
+        });
+      };
+      
+      this.recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        alert(`Speech recognition error: ${event.error}. Please check microphone permissions.`);
+        this.ngZone.run(() => {
+          this.isRecording = false;
+        });
+      };
+      
+      this.recognition.onend = () => {
+        console.log('Speech recognition ended');
+        this.ngZone.run(() => {
+          this.isRecording = false;
+        });
+      };
+    }
+  }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -83,6 +125,26 @@ export class ChatComponent implements OnInit {
     return text
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
+  }
+
+  toggleRecording(): void {
+    if (!this.recognition) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+    
+    if (this.isRecording) {
+      console.log('Stopping recording');
+      this.recognition.stop();
+    } else {
+      // Force update language before starting
+      if (this.recognition.lang !== this.currentLanguage) {
+        this.recognition.lang = this.currentLanguage;
+      }
+      console.log('Starting recording with language:', this.currentLanguage);
+      this.recognition.start();
+      this.isRecording = true;
+    }
   }
 
   playRetentionSound(retentionValue: number): void {
@@ -158,6 +220,9 @@ export class ChatComponent implements OnInit {
 
             if (language) {
               const languageName = language === 'ru' ? 'Russian' : 'English';
+              // Update speech recognition language
+              this.currentLanguage = language === 'ru' ? 'ru-RU' : 'en-US';
+              console.log('Updated currentLanguage to:', this.currentLanguage);
               statusParts.push(`Language: ${languageName}`);
             }
 

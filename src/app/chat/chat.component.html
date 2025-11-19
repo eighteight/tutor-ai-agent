@@ -15,6 +15,10 @@
       <option *ngFor="let q of availableQuestions; let i = index" [value]="i">{{q.question}}</option>
     </select>
     <input type="text" [(ngModel)]="message" placeholder="Type your answer..." (keyup.enter)="sendChatMessage()">
+    <button class="mic-button" (click)="toggleRecording()" [disabled]="isLoading" [class.recording]="isRecording">
+      {{ isRecording ? '⏹' : '🎤' }}
+    </button>
     <button (click)="sendChatMessage()" [disabled]="isLoading">{{ isLoading ? 'Evaluating...' : 'Send' }}</button>
   </div>
+  <div *ngIf="isRecording" class="listening-indicator">🎙️ Listening...</div>
 </div>
