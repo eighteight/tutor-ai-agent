@@ -46,6 +46,7 @@ export class ChatComponent implements OnInit {
   isRecording: boolean = false;
   recognition: any = null;
   currentLanguage: string = 'en-US';
+  usedAudioInput: boolean = false;
 
   constructor(private n8nService: N8nService, private route: ActivatedRoute, private ngZone: NgZone) {
     // Initialize speech recognition if available
@@ -76,6 +77,7 @@ export class ChatComponent implements OnInit {
         alert(`Speech recognition error: ${event.error}. Please check microphone permissions.`);
         this.ngZone.run(() => {
           this.isRecording = false;
+          this.usedAudioInput = false;
         });
       };
       
@@ -142,6 +144,7 @@ export class ChatComponent implements OnInit {
         this.recognition.lang = this.currentLanguage;
       }
       console.log('Starting recording with language:', this.currentLanguage);
+      this.usedAudioInput = true;
       this.recognition.start();
       this.isRecording = true;
     }
@@ -166,8 +169,18 @@ export class ChatComponent implements OnInit {
     audio.play().catch(err => console.log('Audio play failed:', err));
   }
 
+  speakText(text: string): void {
+    console.log('Speaking text:', text, 'Language:', this.currentLanguage);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = this.currentLanguage;
+    utterance.rate = 1.0;
+    speechSynthesis.speak(utterance);
+    console.log('Speech synthesis started');
+  }
+
   sendChatMessage(): void {
     if (this.message.trim() && !this.isLoading) {
+      console.log('Sending message, usedAudioInput:', this.usedAudioInput);
       this.messages.push({ sender: 'user', text: this.message });
       this.isLoading = true;
       this.messages.push({ sender: 'tutor', text: 'Evaluating your answer', type: 'loading' });
@@ -278,11 +291,21 @@ export class ChatComponent implements OnInit {
             }
 
             if (feedback) {
+              console.log('Feedback received:', feedback);
+              console.log('usedAudioInput flag:', this.usedAudioInput);
               this.messages.push({
                 sender: 'tutor',
                 text: feedback,
                 type: 'text'
               });
+              
+              if (this.usedAudioInput) {
+                console.log('Triggering text-to-speech for feedback');
+                this.speakText(feedback);
+                this.usedAudioInput = false;
+              } else {
+                console.log('Skipping text-to-speech (not audio input)');
+              }
             }
 
             // Display lesson content
