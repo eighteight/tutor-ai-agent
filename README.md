@@ -179,9 +179,54 @@ The test suite:
 
 **Prerequisites**: All services must be running (LightRAG, n8n, Ollama)
 
+## Telegram Bot Integration
+
+The tutoring system can be accessed via Telegram bot for mobile learning.
+
+### Setup Telegram Bot
+
+1. **Create Bot**:
+   - Open Telegram and search for `@BotFather`
+   - Send `/newbot` and follow prompts
+   - Save the bot token
+
+2. **Configure**:
+   ```bash
+   # Add to .env file
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   ```
+
+3. **Import Workflow**:
+   ```bash
+   npm run n8n:import-telegram
+   ```
+
+4. **Activate**:
+   - Open n8n at http://localhost:5678
+   - Find "Telegram Tutor Bot" workflow
+   - Configure Telegram Trigger node with your bot token
+   - Select "Polling" mode
+   - Activate the workflow
+
+5. **Test**:
+   - Search for your bot in Telegram
+   - Send `/start` command
+
+### Available Commands
+
+- `/start` - Welcome message and course list
+- `/courses` - Show all available courses
+- `/learn [course]` - Start learning (e.g., `/learn variables`)
+- `/stats` - View learning statistics
+- `/reset` - Clear session
+- `/help` - Show command list
+
+See [TELEGRAM_SETUP.md](TELEGRAM_SETUP.md) for detailed instructions.
+
 ## Development
 
 - **LightRAG Server**: `lightrag-server.py` - Flask API for knowledge management
 - **n8n Workflow**: `workflow.json` - AI orchestration and evaluation logic
+- **Telegram Workflow**: `telegram-workflow.json` - Telegram bot integration
 - **Angular App**: `src/app/` - Frontend components and services
 - **E2E Tests**: `e2e-test.js` - End-to-end workflow testing

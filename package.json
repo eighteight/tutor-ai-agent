@@ -8,8 +8,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:e2e": "node e2e-test.js",
-    "n8n": "n8n start",
+    "n8n": "WEBHOOK_URL=https://leigha-chemosynthetic-undetrimentally.ngrok-free.dev n8n start",
     "n8n:import": "cp 'Tutoring Agent Workflow.json' workflow.json && n8n import:workflow --input=workflow.json --update && n8n update:workflow --id='Tutoring Agent Workflow' --active=true",
+    "n8n:import-telegram": "cp 'Theatre Cognitive Development Telegram Bot.json' telegram-workflow.json && n8n import:workflow --input=telegram-workflow.json",
+    "n8n:import-telegram-simple": "n8n import:workflow --input=telegram-workflow-simple.json",
+    "telegram-bot": "python3 telegram-bot.py",
+    "ngrok": "ngrok http 5678",
     "lightrag": "python3 lightrag-server.py",
     "lightrag:restart": "pkill -f lightrag-server; python3 lightrag-server.py > lightrag.log 2>&1 &"
   },

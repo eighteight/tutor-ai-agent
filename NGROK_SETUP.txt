@@ -1,0 +1,43 @@
+QUICK SETUP WITH YOUR NGROK URL
+================================
+
+Your ngrok URL: https://leigha-chemosynthetic-undetrimentally.ngrok-free.dev
+
+STEPS:
+
+1. Configure n8n to use ngrok URL:
+   - Open n8n at http://localhost:5678
+   - Click profile icon (bottom left) → Settings
+   - Find "Webhook URL" or "n8n Base URL"
+   - Enter: https://leigha-chemosynthetic-undetrimentally.ngrok-free.dev
+   - Save
+
+2. Restart n8n:
+   - Stop n8n (Ctrl+C)
+   - Start again: npm run n8n
+
+3. Create Telegram workflow:
+   - New workflow in n8n
+   - Add "Telegram" trigger node (from triggers)
+   - Select "on message" trigger type
+   - Select your Telegram API credential
+   - Webhook URL will auto-populate with ngrok domain
+
+4. Add Code node:
+   const chatId = $input.first().json.message.chat.id;
+   const text = $input.first().json.message.text || '';
+   return { chatId, message: `Echo: ${text}` };
+
+5. Add Telegram Send node:
+   - Operation: Send Message
+   - Chat ID: {{ $json.chatId }}
+   - Text: {{ $json.message }}
+   - Select credential
+
+6. Connect: Telegram Trigger → Code → Telegram Send
+
+7. Activate workflow
+
+8. Test by messaging your bot in Telegram
+
+NOTE: Keep ngrok running in a separate terminal!

@@ -14,9 +14,9 @@
       "typeVersion": 1,
       "position": [
         240,
-        784
+        664
       ],
-      "webhookId": "782ab8ad-5326-44b4-99e9-66bddd55d1ba",
+      "webhookId": "72546831-9b41-4b00-80a6-4ef0870a8ae6",
       "credentials": {
         "telegramApi": {
           "id": "xkrU1AzTzh723ZuT",
@@ -118,7 +118,7 @@
       "typeVersion": 3,
       "position": [
         464,
-        704
+        584
       ]
     },
     {
@@ -131,13 +131,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        912,
-        208
+        688,
+        232
       ]
     },
     {
       "parameters": {
-        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst courses = $input.last().json.courses || [];\n\nlet message = \"🎓 *Welcome to Tutor AI Agent!*\\n\\n\";\nmessage += \"I'm your AI tutor powered by LightRAG and Ollama.\\n\\n\";\nmessage += \"📚 *Available Courses:*\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. ${course}\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start learning\\n\";\n  message += \"Example: /learn variables\\n\\n\";\n} else {\n  message += \"No courses available yet.\\n\\n\";\n}\n\nmessage += \"📖 Commands:\\n\";\nmessage += \"/courses - List all courses\\n\";\nmessage += \"/stats - View your progress\\n\";\nmessage += \"/help - Show all commands\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+        "jsCode": "const chatId = $json.message.chat.id;\nconst courses = $json.courses || [];\n\nlet message = \"🎓 *Welcome to Tutor AI Agent!*\\n\\n\";\nmessage += \"I'm your AI tutor powered by LightRAG and Ollama.\\n\\n\";\nmessage += \"📚 *Available Courses:*\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. ${course}\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start learning\\n\";\n  message += \"Example: /learn variables\\n\\n\";\n} else {\n  message += \"No courses available yet.\\n\\n\";\n}\n\nmessage += \"📖 Commands:\\n\";\nmessage += \"/courses - List all courses\\n\";\nmessage += \"/stats - View your progress\\n\";\nmessage += \"/help - Show all commands\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
       },
       "id": "format-start",
       "name": "Format Start Message",
@@ -162,9 +162,9 @@
       "typeVersion": 1.1,
       "position": [
         1360,
-        688
+        760
       ],
-      "webhookId": "fc5da404-66d7-40c9-ad1f-5ed5412fc98a",
+      "webhookId": "54872b07-ed7e-42c0-9332-4948d5d42112",
       "credentials": {
         "telegramApi": {
           "id": "xkrU1AzTzh723ZuT",
@@ -174,7 +174,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst courses = $input.last().json.courses || [];\n\nlet message = \"📚 *Available Courses:*\\n\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. \\`${course}\\`\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start\\n\";\n  message += \"Example: /learn variables\";\n} else {\n  message += \"No courses available yet.\\n\";\n  message += \"Upload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+        "jsCode": "const chatId = $json.message.chat.id;\nconst courses = $json.courses || [];\n\nlet message = \"📚 *Available Courses:*\\n\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. \\`${course}\\`\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start\\n\";\n  message += \"Example: /learn variables\";\n} else {\n  message += \"No courses available yet.\\n\";\n  message += \"Upload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
       },
       "id": "format-courses",
       "name": "Format Courses List",
@@ -182,7 +182,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        304
+        352
       ]
     },
     {
@@ -195,7 +195,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        496
+        568
       ]
     },
     {
@@ -223,7 +223,7 @@
       "typeVersion": 4.1,
       "position": [
         912,
-        496
+        568
       ]
     },
     {
@@ -236,7 +236,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        496
+        568
       ]
     },
     {
@@ -249,7 +249,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        688
+        760
       ]
     },
     {
@@ -262,7 +262,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        880
+        952
       ]
     },
     {
@@ -275,7 +275,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1072
+        1144
       ]
     },
     {
@@ -288,7 +288,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        1264
+        1336
       ]
     },
     {
@@ -324,7 +324,7 @@
       "typeVersion": 4.1,
       "position": [
         912,
-        1264
+        1336
       ]
     },
     {
@@ -337,7 +337,37 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1264
+        1336
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "merge-start",
+      "name": "Merge Start Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "merge-courses",
+      "name": "Merge Courses Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        352
       ]
     }
   ],
@@ -361,11 +391,21 @@
             "node": "Get Courses",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge Start Data",
+            "type": "main",
+            "index": 0
           }
         ],
         [
           {
             "node": "Get Courses",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Courses Data",
             "type": "main",
             "index": 0
           }
@@ -411,14 +451,14 @@
       "main": [
         [
           {
-            "node": "Format Start Message",
+            "node": "Merge Start Data",
             "type": "main",
-            "index": 0
+            "index": 1
           },
           {
-            "node": "Format Courses List",
+            "node": "Merge Courses Data",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -543,16 +583,42 @@
           }
         ]
       ]
+    },
+    "Merge Start Data": {
+      "main": [
+        [
+          {
+            "node": "Format Start Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Courses Data": {
+      "main": [
+        [
+          {
+            "node": "Format Courses List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false,
+    "errorWorkflow": "d3W6KgMxhHVLhtct"
   },
-  "versionId": "e99acfb6-6fa9-4145-a00b-fa2eb3c69566",
+  "versionId": "5429521d-9953-437a-a56d-7b8576bf2e3e",
   "meta": {
     "instanceId": "59e1da128c2e44f2f88be481a95d3142e5421187487d3334a914f7e0baf0faf4"
   },
-  "id": "sf0GLqj7AhQBZe88",
+  "id": "UOgGVUasW62FzsO2",
   "tags": []
 }
