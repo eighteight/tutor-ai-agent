@@ -1,0 +1,558 @@
+{
+  "name": "Theatre Cognitive Development Telegram Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        784
+      ],
+      "webhookId": "782ab8ad-5326-44b4-99e9-66bddd55d1ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "xkrU1AzTzh723ZuT",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/start"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/courses"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "courses"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/learn"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "learn"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/stats"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "stats"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/reset"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "reset"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/help"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "command-router",
+      "name": "Command Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        464,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/courses",
+        "options": {}
+      },
+      "id": "get-courses",
+      "name": "Get Courses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst courses = $input.last().json.courses || [];\n\nlet message = \"🎓 *Welcome to Tutor AI Agent!*\\n\\n\";\nmessage += \"I'm your AI tutor powered by LightRAG and Ollama.\\n\\n\";\nmessage += \"📚 *Available Courses:*\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. ${course}\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start learning\\n\";\n  message += \"Example: /learn variables\\n\\n\";\n} else {\n  message += \"No courses available yet.\\n\\n\";\n}\n\nmessage += \"📖 Commands:\\n\";\nmessage += \"/courses - List all courses\\n\";\nmessage += \"/stats - View your progress\\n\";\nmessage += \"/help - Show all commands\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-start",
+      "name": "Format Start Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "={{ $json.parseMode }}"
+        }
+      },
+      "id": "send-telegram",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        688
+      ],
+      "webhookId": "fc5da404-66d7-40c9-ad1f-5ed5412fc98a",
+      "credentials": {
+        "telegramApi": {
+          "id": "xkrU1AzTzh723ZuT",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst courses = $input.last().json.courses || [];\n\nlet message = \"📚 *Available Courses:*\\n\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. \\`${course}\\`\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start\\n\";\n  message += \"Example: /learn variables\";\n} else {\n  message += \"No courses available yet.\\n\";\n  message += \"Upload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-courses",
+      "name": "Format Courses List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst text = $input.first().json.message.text;\nconst course = text.replace('/learn', '').trim();\n\nif (!course) {\n  return {\n    chatId,\n    message: \"❌ Please specify a course.\\n\\nExample: /learn variables\",\n    parseMode: 'Markdown'\n  };\n}\n\n// Store session data\nconst sessionKey = `session_${chatId}`;\nconst session = {\n  chatId,\n  course,\n  retentionHistory: [],\n  currentQuestion: null,\n  language: 'en'\n};\n\n// Get initial question from LightRAG\nreturn {\n  chatId,\n  course,\n  session,\n  sessionKey\n};"
+      },
+      "id": "parse-learn",
+      "name": "Parse Learn Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/query",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "course",
+              "value": "={{ $json.course }}"
+            },
+            {
+              "name": "query",
+              "value": "What is the first topic I should learn?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "query-lightrag",
+      "name": "Query LightRAG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.chatId;\nconst course = $input.first().json.course;\nconst ragResponse = $input.last().json;\n\nlet message = `🎯 *Starting Course: ${course}*\\n\\n`;\nmessage += `${ragResponse.response || 'Let\\'s begin!'}\\n\\n`;\nmessage += \"📝 Answer the questions I ask, and I'll evaluate your understanding.\\n\\n\";\nmessage += \"Your retention score will help me adapt the lessons to your level.\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-learn",
+      "name": "Format Learn Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst sessionKey = `session_${chatId}`;\n\n// In production, retrieve from Redis/database\n// For now, return mock data\nconst session = {\n  retentionHistory: [0.8, 0.75, 0.9, 0.85],\n  course: 'variables'\n};\n\nconst avg = session.retentionHistory.length > 0\n  ? Math.round((session.retentionHistory.reduce((a, b) => a + b, 0) / session.retentionHistory.length) * 100)\n  : 0;\n\nlet message = \"📊 *Your Learning Statistics*\\n\\n\";\nmessage += `📚 Current Course: \\`${session.course || 'None'}\\`\\n`;\nmessage += `📈 Average Retention: *${avg}%*\\n`;\nmessage += `🎯 Questions Answered: ${session.retentionHistory.length}\\n\\n`;\n\nif (session.retentionHistory.length > 0) {\n  message += \"Recent Scores:\\n\";\n  session.retentionHistory.slice(-5).forEach((score, i) => {\n    const percent = Math.round(score * 100);\n    const emoji = percent > 75 ? '🟢' : percent >= 50 ? '🟠' : '🔴';\n    message += `${emoji} ${percent}%\\n`;\n  });\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-stats",
+      "name": "Format Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\n\nlet message = \"🔄 *Session Reset*\\n\\n\";\nmessage += \"Your learning session has been cleared.\\n\\n\";\nmessage += \"Use /start to begin again!\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-reset",
+      "name": "Format Reset",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\n\nlet message = \"📖 *Available Commands*\\n\\n\";\nmessage += \"/start - Welcome message and course list\\n\";\nmessage += \"/courses - Show all available courses\\n\";\nmessage += \"/learn [course] - Start learning a course\\n\";\nmessage += \"/stats - View your learning statistics\\n\";\nmessage += \"/reset - Clear your session\\n\";\nmessage += \"/help - Show this help message\\n\\n\";\nmessage += \"💡 *How to use:*\\n\";\nmessage += \"1. Use /courses to see available topics\\n\";\nmessage += \"2. Use /learn [course] to start\\n\";\nmessage += \"3. Answer questions I ask\\n\";\nmessage += \"4. Get personalized lessons based on your performance\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-help",
+      "name": "Format Help",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst text = $input.first().json.message.text;\nconst sessionKey = `session_${chatId}`;\n\n// In production, retrieve session from Redis/database\n// For now, check if message looks like an answer\nconst session = {\n  chatId,\n  course: 'variables',\n  currentQuestion: 'What is the difference between let and const?',\n  retentionHistory: []\n};\n\nif (!session.course) {\n  return {\n    chatId,\n    message: \"❌ No active course. Use /learn [course] to start.\",\n    parseMode: 'Markdown',\n    skipTutoring: true\n  };\n}\n\nreturn {\n  chatId,\n  course: session.course,\n  question: session.currentQuestion,\n  answer: text,\n  session\n};"
+      },
+      "id": "handle-answer",
+      "name": "Handle Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/lesson",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "topic",
+              "value": "={{ $json.course }}"
+            },
+            {
+              "name": "question",
+              "value": "={{ $json.question }}"
+            },
+            {
+              "name": "answer",
+              "value": "={{ $json.answer }}"
+            },
+            {
+              "name": "course",
+              "value": "={{ $json.course }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call-tutoring",
+      "name": "Call Tutoring Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.chatId;\nconst tutoringResponse = $input.last().json;\n\nconst retention = tutoringResponse.retention || 0;\nconst feedback = tutoringResponse.feedback || 'Good effort!';\nconst lessonKind = tutoringResponse.lesson_kind || 'review';\n\nconst retentionPercent = Math.round(retention * 100);\nconst emoji = retentionPercent > 75 ? '🟢' : retentionPercent >= 50 ? '🟠' : '🔴';\n\nlet message = `${emoji} *Retention: ${retentionPercent}%*\\n\\n`;\nmessage += `📝 ${feedback}\\n\\n`;\n\n// Add lesson content\nif (tutoringResponse.lesson_content) {\n  const lessons = Array.isArray(tutoringResponse.lesson_content) \n    ? tutoringResponse.lesson_content \n    : [tutoringResponse.lesson_content];\n  \n  lessons.forEach(lesson => {\n    if (lesson.title && lesson.content) {\n      message += `\\n*${lesson.title}*\\n${lesson.content}\\n`;\n    }\n  });\n}\n\n// Add next question\nif (tutoringResponse.questions && tutoringResponse.questions.length > 0) {\n  const nextQ = tutoringResponse.questions[0];\n  message += `\\n\\n❓ *Next Question:*\\n${nextQ.question}`;\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "format-tutoring",
+      "name": "Format Tutoring Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        1264
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Command Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Command Router": {
+      "main": [
+        [
+          {
+            "node": "Get Courses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Courses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Learn Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Reset",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Courses": {
+      "main": [
+        [
+          {
+            "node": "Format Start Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Courses List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Start Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Courses List": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Learn Command": {
+      "main": [
+        [
+          {
+            "node": "Query LightRAG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query LightRAG": {
+      "main": [
+        [
+          {
+            "node": "Format Learn Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Learn Response": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Stats": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reset": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Help": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Answer": {
+      "main": [
+        [
+          {
+            "node": "Call Tutoring Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Tutoring Workflow": {
+      "main": [
+        [
+          {
+            "node": "Format Tutoring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Tutoring Response": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e99acfb6-6fa9-4145-a00b-fa2eb3c69566",
+  "meta": {
+    "instanceId": "59e1da128c2e44f2f88be481a95d3142e5421187487d3334a914f7e0baf0faf4"
+  },
+  "id": "sf0GLqj7AhQBZe88",
+  "tags": []
+}
