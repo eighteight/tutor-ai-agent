@@ -15,7 +15,7 @@
       "typeVersion": 1,
       "position": [
         240,
-        672
+        736
       ],
       "webhookId": "72546831-9b41-4b00-80a6-4ef0870a8ae6",
       "credentials": {
@@ -119,7 +119,7 @@
       "typeVersion": 3,
       "position": [
         464,
-        592
+        656
       ]
     },
     {
@@ -133,7 +133,7 @@
       "typeVersion": 4.1,
       "position": [
         688,
-        240
+        112
       ]
     },
     {
@@ -146,7 +146,7 @@
       "typeVersion": 2,
       "position": [
         912,
-        240
+        112
       ]
     },
     {
@@ -160,7 +160,7 @@
       "typeVersion": 4.1,
       "position": [
         688,
-        352
+        448
       ]
     },
     {
@@ -181,8 +181,9 @@
         "chatId": "={{ String($json.chatId) }}",
         "text": "={{ $json.message }}",
         "additionalFields": {
-          "parse_mode": "={{ $json.parseMode }}",
-          "disable_web_page_preview": true
+          "disable_notification": true,
+          "disable_web_page_preview": true,
+          "parse_mode": "={{ $json.parseMode }}"
         }
       },
       "id": "send-telegram",
@@ -191,7 +192,7 @@
       "typeVersion": 1.1,
       "position": [
         1360,
-        768
+        736
       ],
       "webhookId": "9fe8e153-b221-4570-b728-54a956a86779",
       "credentials": {
@@ -211,7 +212,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        352
+        304
       ]
     },
     {
@@ -224,48 +225,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        576
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://127.0.0.1:8000/query",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "course",
-              "value": "={{ $json.course }}"
-            },
-            {
-              "name": "query",
-              "value": "What is the first topic I should learn?"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "query-lightrag",
-      "name": "Query LightRAG",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        912,
-        576
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const ragResponse = $json;\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nconst messageText = $('Telegram Trigger').first().json.message.text;\nconst course = messageText.replace('/learn', '').trim() || 'Unknown Course';\n\nlet message = `🎯 *Starting Course: ${course}*\\n\\n`;\nconst content = ragResponse.courseContent || ragResponse.answer || 'Welcome to the course! Let\\'s begin your learning journey.';\nmessage += `${content}\\n\\n`;\nmessage += \"📝 Answer the questions I ask, and I'll evaluate your understanding.\\n\\n\";\nmessage += \"Your retention score will help me adapt the lessons to your level.\";\n\nif (!message.trim()) {\n  message = 'Course started successfully! Ready to begin learning.';\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
-      },
-      "id": "format-learn",
-      "name": "Format Learn Response",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1136,
-        576
+        640
       ]
     },
     {
@@ -278,7 +238,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        768
+        1024
       ]
     },
     {
@@ -291,7 +251,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        960
+        1216
       ]
     },
     {
@@ -304,7 +264,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1152
+        1408
       ]
     },
     {
@@ -317,7 +277,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        1344
+        1600
       ]
     },
     {
@@ -353,7 +313,7 @@
       "typeVersion": 4.1,
       "position": [
         912,
-        1344
+        1600
       ]
     },
     {
@@ -366,7 +326,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1344
+        1600
       ]
     },
     {
@@ -381,8 +341,194 @@
       "typeVersion": 2.1,
       "position": [
         912,
-        352
+        304
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$json.courseContent}\n\nStudent answer: '${$json.answer}'\nQuestion: '${$json.question}'\nTopic: '${$json.topic}'\n\nIMPORTANT: Respond in the SAME LANGUAGE as the course content above. Evaluate the answer and provide feedback in that language. Return ONLY a JSON object with 'feedback' (string in course language) and 'retention' (number 0-1) fields.`,\n    stream: false\n  })\n}}",
+        "options": {
+          "response": {}
+        }
+      },
+      "name": "Evaluate Answer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        624
+      ],
+      "id": "17b98e1e-5057-410a-a669-c0296374e787"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get evaluation data from previous node\nconst evaluationResponse = $json.response;\n\n// Parse evaluation JSON\nlet evaluationData = {};\ntry {\n  // First try to parse as direct JSON\n  evaluationData = JSON.parse(evaluationResponse);\n} catch (e) {\n  try {\n    // Fallback: try to extract from markdown code blocks\n    const jsonMatch = evaluationResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n      evaluationData = JSON.parse(jsonMatch[1]);\n    }\n  } catch (e2) {\n    console.log('Error parsing evaluation:', e2);\n    evaluationData = { feedback: 'Parse error', retention: 0 };\n  }\n}\n\n// Store evaluation data for later use\nreturn {\n  json: {\n    ...evaluationData,\n    originalResponse: evaluationResponse\n  }\n};"
+      },
+      "name": "Parse Evaluation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        624
+      ],
+      "id": "01586ae1-97e3-42c3-bbd0-768e371d6a39"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is doing well. Create an advanced lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false,\n    think: false,\n    lessonType: 'advanced'\n  })\n}}",
+        "options": {
+          "response": {}
+        }
+      },
+      "name": "Generate Advanced Lesson",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        2272,
+        624
+      ],
+      "id": "dfa517ae-d069-452f-8107-276e760897cd"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    model: 'deepseek-r1:14b',\n    prompt: `Course content:\n${$('Retrieve Course Content').first().json.courseContent}\n\nStudent retention score: ${$('Parse Evaluation').first().json.retention}\n\nIMPORTANT: Generate ALL content in the SAME LANGUAGE as the course content above. The student is struggling. Create a review lesson and three new questions entirely in that language.\n\nReturn ONLY this JSON structure:\n{\n  \"lesson_content\": [\n    {\"title\": \"Section Title\", \"content\": \"Section text\"},\n    {\"title\": \"Section Title\", \"content\": \"Section text\"}\n  ],\n  \"questions\": [\n    {\"question\": \"Question text\"}\n  ]\n}`,\n    stream: false,\n    lessonType: 'review'\n  })\n}}",
+        "options": {
+          "response": {}
+        }
+      },
+      "name": "Generate Review Lesson",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        2272,
+        816
+      ],
+      "id": "0e31bfe5-2015-4f18-b482-239aecf5605d"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get retention from Parse Evaluation node\nconst retention = $('Parse Evaluation').first().json.retention;\nconst feedback = $('Parse Evaluation').first().json.feedback;\n\n// Get lesson response from current node\nconst lessonResponse = $json.response;\n\n// Detect language from course content\nconst courseContent = $('Retrieve Course Content').first().json.courseContent;\nconst hasCyrillic = /[\\u0400-\\u04FF]/.test(courseContent);\nconst language = hasCyrillic ? 'ru' : 'en';\n\n// Determine lesson kind based on which node executed\nconst lessonKind = $json.lessonType || 'unknown';\n\n// Return merged response with retention, language, and lesson kind\nreturn {\n  json: {\n    response: lessonResponse,\n    retention: retention,\n    feedback: feedback,\n    language: language,\n    lesson_kind: lessonKind\n  }\n};"
+      },
+      "name": "Merge Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        624
+      ],
+      "id": "dc8ea4e4-0736-49bf-bd10-2b92a6714455"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "56a15092-d778-4143-9f01-0eccbb6ea2c9",
+              "leftValue": "={{ $json.retention }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2048,
+        624
+      ],
+      "id": "4ce1e973-a2cb-46df-a6ca-d69849406ba1",
+      "name": "Evaluate Retention"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/query",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "course",
+              "value": "={{ $json.course }}"
+            },
+            {
+              "name": "query",
+              "value": "What is the first topic I should learn?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "query-lightrag",
+      "name": "Retrieve Course Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ragResponse = $json;\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nconst messageText = $('Telegram Trigger').first().json.message.text;\nconst course = messageText.replace('/learn', '').trim() || 'Unknown Course';\n\nlet message = `🎯 *Starting Course: ${course}*\\n\\n`;\nconst content = ragResponse.courseContent || ragResponse.answer || 'Welcome to the course! Let\\'s begin your learning journey.';\nmessage += `${content}\\n\\n`;\nmessage += \"📝 Answer the questions I ask, and I'll evaluate your understanding.\\n\\n\";\nmessage += \"Your retention score will help me adapt the lessons to your level.\";\n\nif (!message.trim()) {\n  message = 'Course started successfully! Ready to begin learning.';\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+      },
+      "id": "3fe1f6e4-b3bb-48b6-86a9-3ac8099ba618",
+      "name": "Format Learn Response1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ String($json.chatId) }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "disable_notification": true,
+          "disable_web_page_preview": true,
+          "parse_mode": "={{ $json.parseMode }}"
+        }
+      },
+      "id": "b7ffdd13-a1c2-44da-b16e-9896135f751d",
+      "name": "Send Telegram Message1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        3104,
+        640
+      ],
+      "webhookId": "9fe8e153-b221-4570-b728-54a956a86779",
+      "credentials": {
+        "telegramApi": {
+          "id": "xkrU1AzTzh723ZuT",
+          "name": "Telegram Bot"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -522,29 +668,7 @@
       "main": [
         [
           {
-            "node": "Query LightRAG",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Query LightRAG": {
-      "main": [
-        [
-          {
-            "node": "Format Learn Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Learn Response": {
-      "main": [
-        [
-          {
-            "node": "Send Telegram Message",
+            "node": "Retrieve Course Content",
             "type": "main",
             "index": 0
           }
@@ -627,17 +751,111 @@
           }
         ]
       ]
+    },
+    "Evaluate Answer": {
+      "main": [
+        [
+          {
+            "node": "Parse Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Advanced Lesson": {
+      "main": [
+        [
+          {
+            "node": "Merge Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Review Lesson": {
+      "main": [
+        [
+          {
+            "node": "Merge Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Retention": {
+      "main": [
+        [
+          {
+            "node": "Generate Advanced Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Review Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Retention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Course Content": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Response": {
+      "main": [
+        [
+          {
+            "node": "Format Learn Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Learn Response1": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": -1,
     "availableInMCP": false,
     "errorWorkflow": "d3W6KgMxhHVLhtct"
   },
-  "versionId": "a377bd9d-f549-4c56-aa6e-1c76a4527269",
+  "versionId": "4c36ccd8-2ee6-4054-9494-782f3189029d",
   "meta": {
     "instanceId": "59e1da128c2e44f2f88be481a95d3142e5421187487d3334a914f7e0baf0faf4"
   },
