@@ -4,7 +4,8 @@
     {
       "parameters": {
         "updates": [
-          "message"
+          "message",
+          "callback_query"
         ],
         "additionalFields": {}
       },
@@ -14,13 +15,13 @@
       "typeVersion": 1,
       "position": [
         240,
-        664
+        672
       ],
       "webhookId": "72546831-9b41-4b00-80a6-4ef0870a8ae6",
       "credentials": {
         "telegramApi": {
           "id": "xkrU1AzTzh723ZuT",
-          "name": "Telegram account"
+          "name": "Telegram Bot"
         }
       }
     },
@@ -28,6 +29,19 @@
       "parameters": {
         "rules": {
           "values": [
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.message.text }}",
+                    "operation": "startsWith",
+                    "value2": "/learn"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "learn"
+            },
             {
               "conditions": {
                 "string": [
@@ -53,19 +67,6 @@
               },
               "renameOutput": true,
               "outputKey": "courses"
-            },
-            {
-              "conditions": {
-                "string": [
-                  {
-                    "value1": "={{ $json.message.text }}",
-                    "operation": "startsWith",
-                    "value2": "/learn"
-                  }
-                ]
-              },
-              "renameOutput": true,
-              "outputKey": "learn"
             },
             {
               "conditions": {
@@ -118,7 +119,7 @@
       "typeVersion": 3,
       "position": [
         464,
-        584
+        592
       ]
     },
     {
@@ -132,12 +133,39 @@
       "typeVersion": 4.1,
       "position": [
         688,
-        232
+        240
       ]
     },
     {
       "parameters": {
-        "jsCode": "const chatId = $json.message.chat.id;\nconst courses = $json.courses || [];\n\nlet message = \"🎓 *Welcome to Tutor AI Agent!*\\n\\n\";\nmessage += \"I'm your AI tutor powered by LightRAG and Ollama.\\n\\n\";\nmessage += \"📚 *Available Courses:*\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. ${course}\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start learning\\n\";\n  message += \"Example: /learn variables\\n\\n\";\n} else {\n  message += \"No courses available yet.\\n\\n\";\n}\n\nmessage += \"📖 Commands:\\n\";\nmessage += \"/courses - List all courses\\n\";\nmessage += \"/stats - View your progress\\n\";\nmessage += \"/help - Show all commands\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+        "jsCode": "const courses = $json.courses || [];\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\n\nreturn {\n  courses,\n  chatId\n};"
+      },
+      "id": "add-chat-id",
+      "name": "Add Chat ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/courses",
+        "options": {}
+      },
+      "id": "get-courses-for-list",
+      "name": "Get Courses For List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        688,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const courses = $json.courses || [];\nconst chatId = $json.chatId;\n\nlet message = \"🎓 *Welcome to Tutor AI Agent!*\\n\\n\";\nmessage += \"I'm your AI tutor powered by LightRAG and Ollama.\\n\\n\";\nmessage += \"📚 *Available Courses:*\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. \\`/learn ${course}\\`\\n`;\n  });\n  message += \"\\n💡 Copy and send any command above to start learning!\";\n} else {\n  message += \"\\nNo courses available yet.\\nUpload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
       },
       "id": "format-start",
       "name": "Format Start Message",
@@ -150,10 +178,11 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $json.chatId }}",
+        "chatId": "={{ String($json.chatId) }}",
         "text": "={{ $json.message }}",
         "additionalFields": {
-          "parse_mode": "={{ $json.parseMode }}"
+          "parse_mode": "={{ $json.parseMode }}",
+          "disable_web_page_preview": true
         }
       },
       "id": "send-telegram",
@@ -162,19 +191,19 @@
       "typeVersion": 1.1,
       "position": [
         1360,
-        760
+        768
       ],
-      "webhookId": "54872b07-ed7e-42c0-9332-4948d5d42112",
+      "webhookId": "9fe8e153-b221-4570-b728-54a956a86779",
       "credentials": {
         "telegramApi": {
           "id": "xkrU1AzTzh723ZuT",
-          "name": "Telegram account"
+          "name": "Telegram Bot"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const chatId = $json.message.chat.id;\nconst courses = $json.courses || [];\n\nlet message = \"📚 *Available Courses:*\\n\\n\";\n\nif (courses.length > 0) {\n  courses.forEach((course, index) => {\n    message += `${index + 1}. \\`${course}\\`\\n`;\n  });\n  message += \"\\n💡 Use /learn [course] to start\\n\";\n  message += \"Example: /learn variables\";\n} else {\n  message += \"No courses available yet.\\n\";\n  message += \"Upload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+        "jsCode": "const chatId = $json.message?.chat?.id;\nconst courses = $json.courses || [];\n\nlet message = \"📚 *Available Courses:*\";\nlet replyMarkup = null;\n\nif (courses.length > 0) {\n  const buttons = courses.map(course => [{\n    text: course,\n    callback_data: `/course ${course}`\n  }]);\n  \n  replyMarkup = {\n    inline_keyboard: buttons\n  };\n} else {\n  message += \"\\n\\nNo courses available yet.\\nUpload content via the web interface.\";\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown',\n  replyMarkup\n};"
       },
       "id": "format-courses",
       "name": "Format Courses List",
@@ -195,7 +224,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        568
+        576
       ]
     },
     {
@@ -223,12 +252,12 @@
       "typeVersion": 4.1,
       "position": [
         912,
-        568
+        576
       ]
     },
     {
       "parameters": {
-        "jsCode": "const chatId = $input.first().json.chatId;\nconst course = $input.first().json.course;\nconst ragResponse = $input.last().json;\n\nlet message = `🎯 *Starting Course: ${course}*\\n\\n`;\nmessage += `${ragResponse.response || 'Let\\'s begin!'}\\n\\n`;\nmessage += \"📝 Answer the questions I ask, and I'll evaluate your understanding.\\n\\n\";\nmessage += \"Your retention score will help me adapt the lessons to your level.\";\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
+        "jsCode": "const ragResponse = $json;\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nconst messageText = $('Telegram Trigger').first().json.message.text;\nconst course = messageText.replace('/learn', '').trim() || 'Unknown Course';\n\nlet message = `🎯 *Starting Course: ${course}*\\n\\n`;\nconst content = ragResponse.courseContent || ragResponse.answer || 'Welcome to the course! Let\\'s begin your learning journey.';\nmessage += `${content}\\n\\n`;\nmessage += \"📝 Answer the questions I ask, and I'll evaluate your understanding.\\n\\n\";\nmessage += \"Your retention score will help me adapt the lessons to your level.\";\n\nif (!message.trim()) {\n  message = 'Course started successfully! Ready to begin learning.';\n}\n\nreturn {\n  chatId,\n  message,\n  parseMode: 'Markdown'\n};"
       },
       "id": "format-learn",
       "name": "Format Learn Response",
@@ -236,7 +265,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        568
+        576
       ]
     },
     {
@@ -249,7 +278,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        760
+        768
       ]
     },
     {
@@ -262,7 +291,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        952
+        960
       ]
     },
     {
@@ -275,7 +304,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1144
+        1152
       ]
     },
     {
@@ -288,7 +317,7 @@
       "typeVersion": 2,
       "position": [
         688,
-        1336
+        1344
       ]
     },
     {
@@ -324,7 +353,7 @@
       "typeVersion": 4.1,
       "position": [
         912,
-        1336
+        1344
       ]
     },
     {
@@ -337,22 +366,7 @@
       "typeVersion": 2,
       "position": [
         1136,
-        1336
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combinationMode": "mergeByPosition",
-        "options": {}
-      },
-      "id": "merge-start",
-      "name": "Merge Start Data",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 2.1,
-      "position": [
-        912,
-        112
+        1344
       ]
     },
     {
@@ -388,12 +402,7 @@
       "main": [
         [
           {
-            "node": "Get Courses",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Start Data",
+            "node": "Parse Learn Command",
             "type": "main",
             "index": 0
           }
@@ -401,18 +410,18 @@
         [
           {
             "node": "Get Courses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Courses For List",
             "type": "main",
             "index": 0
           },
           {
             "node": "Merge Courses Data",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Parse Learn Command",
             "type": "main",
             "index": 0
           }
@@ -444,6 +453,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Parse Learn Command",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -451,10 +467,27 @@
       "main": [
         [
           {
-            "node": "Merge Start Data",
+            "node": "Add Chat ID",
             "type": "main",
-            "index": 1
-          },
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Chat ID": {
+      "main": [
+        [
+          {
+            "node": "Format Start Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Courses For List": {
+      "main": [
+        [
           {
             "node": "Merge Courses Data",
             "type": "main",
@@ -584,17 +617,6 @@
         ]
       ]
     },
-    "Merge Start Data": {
-      "main": [
-        [
-          {
-            "node": "Format Start Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Merge Courses Data": {
       "main": [
         [
@@ -615,7 +637,7 @@
     "availableInMCP": false,
     "errorWorkflow": "d3W6KgMxhHVLhtct"
   },
-  "versionId": "5429521d-9953-437a-a56d-7b8576bf2e3e",
+  "versionId": "a377bd9d-f549-4c56-aa6e-1c76a4527269",
   "meta": {
     "instanceId": "59e1da128c2e44f2f88be481a95d3142e5421187487d3334a914f7e0baf0faf4"
   },
